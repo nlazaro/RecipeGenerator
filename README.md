@@ -1,0 +1,2 @@
+# RecipeGenerator
+Generates a recipe
