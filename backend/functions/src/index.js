@@ -17,5 +17,4 @@ exports.generateRecipe = functions.https.onCall((data, context) => {
   };
 
   return recipe;
-});</content>
-<parameter name="filePath">/home/rabbimov22x/RecipeGenerator/backend/functions/src/index.js
+});

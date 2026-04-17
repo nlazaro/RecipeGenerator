@@ -20,5 +20,4 @@
     "firebase-functions-test": "^3.1.0"
   },
   "private": true
-}</content>
-<parameter name="filePath">/home/rabbimov22x/RecipeGenerator/backend/functions/package.json
+}
