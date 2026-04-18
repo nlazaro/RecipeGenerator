@@ -1,5 +1,6 @@
 import React from "react";
 import "./reciple_review.css";
+import { useNavigate } from "react-router-dom";
 
 const ingredients = [
     { id: "01", name: "Heirloom Tomatoes", detail: "Approx. 400g • Ripe" },
@@ -9,6 +10,9 @@ const ingredients = [
 ];
 
 export default function recipe_review() {
+
+    const navigate = useNavigate();
+
     return (
         <div className="container">
             <header className="header">
@@ -45,7 +49,13 @@ export default function recipe_review() {
                         ))}
                     </div>
 
-                    <button className="primary">CONFIRM SELECTION →</button>
+                    <button
+                        className="primary"
+                        onClick={() => navigate("/confirmation")}
+                    >
+                        CONFIRM SELECTION →
+                    </button>
+
                     <button className="secondary">ADD MISSING ITEM</button>
                 </div>
             </div>
