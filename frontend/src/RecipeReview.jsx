@@ -73,7 +73,7 @@ export default function recipe_review() {
             if (!response.ok) throw new Error(`Recipe API error: ${response.status}`);
             const data = await response.json();
 
-            navigate("/confirmation", { state: { recipes: data } });
+            navigate("/confirmation", { state: { recipes: data, inventory } });
         } catch (err) {
             setError("Inventory saved! Recipe generation failed: " + err.message);
         } finally {

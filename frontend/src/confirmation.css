@@ -374,10 +374,39 @@ a {
     margin-bottom: 40px;
 }
 
+.selection-subrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
 .selection-subtitle {
     font-size: 16px;
     color: #888;
     margin: 0;
+}
+
+.regen-btn {
+    background: none;
+    border: 1px solid #111;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.regen-btn:hover:not(:disabled) {
+    background: #111;
+    color: white;
+}
+
+.regen-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .recipe-cards {

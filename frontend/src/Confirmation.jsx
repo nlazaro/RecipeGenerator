@@ -1,14 +1,47 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 import "./confirmation.css";
+
+const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
 export default function Confirmation() {
     const location = useLocation();
     const navigate = useNavigate();
-    const recipeList = location.state?.recipes?.recipes || [];
+    const [recipeList, setRecipeList] = useState(location.state?.recipes?.recipes || []);
+    const inventory = location.state?.inventory || [];
     const [selected, setSelected] = useState(null);
+    const [regenerating, setRegenerating] = useState(false);
+    const [regenError, setRegenError] = useState("");
+
+    async function handleRegenerate() {
+        setRegenerating(true);
+        setRegenError("");
+        const uid = auth.currentUser?.uid;
+        let liked_recipes = [];
+        let disliked_recipes = [];
+        try {
+            if (uid) {
+                const snap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
+                const saved = snap.docs.map(d => d.data()).filter(r => r.rating);
+                liked_recipes = saved.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
+                disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
+            }
+            const response = await fetch(RECIPE_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ inventory, liked_recipes, disliked_recipes }),
+            });
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            const data = await response.json();
+            setRecipeList(data.recipes || []);
+        } catch (err) {
+            setRegenError("Failed to regenerate: " + err.message);
+        } finally {
+            setRegenerating(false);
+        }
+    }
 
     const [isFavorited, setIsFavorited] = useState(false);
     const [rating, setRating] = useState(0);
@@ -210,7 +243,13 @@ export default function Confirmation() {
             <header className="selection-header">
                 <div className="label">AI GENERATED</div>
                 <h1 className="recipe-title">YOUR RECIPES</h1>
-                <p className="selection-subtitle">Select a recipe to view the full instructions.</p>
+                <div className="selection-subrow">
+                    <p className="selection-subtitle">Select a recipe to view the full instructions.</p>
+                    <button className="regen-btn" onClick={handleRegenerate} disabled={regenerating}>
+                        {regenerating ? "GENERATING..." : "↻ REGENERATE"}
+                    </button>
+                </div>
+                {regenError && <p style={{ color: "red", fontSize: "13px", marginTop: "8px" }}>{regenError}</p>}
             </header>
 
             <div className="recipe-cards">

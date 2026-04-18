@@ -84,7 +84,7 @@ export default function ImageUpload() {
       if (!response.ok) throw new Error(`Recipe API error: ${response.status}`)
       const data = await response.json()
 
-      navigate('/confirmation', { state: { recipes: data } })
+      navigate('/confirmation', { state: { recipes: data, inventory } })
     } catch (err) {
       alert('Inventory saved! Recipe generation failed: ' + err.message)
     }
