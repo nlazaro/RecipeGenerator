@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './SignIn.css'
 import { auth, googleProvider } from './firebase'
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 
-function SignIn({ onNavigate }) {
+function SignIn() {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +22,7 @@ function SignIn({ onNavigate }) {
         await signInWithEmailAndPassword(auth, email, password)
       }
       // change this later on to javiers page
-      onNavigate('landing')
+      navigate('/')
     } catch (err) {
       setError(err.message)
     }
@@ -31,7 +33,7 @@ function SignIn({ onNavigate }) {
     try {
       await signInWithPopup(auth, googleProvider)
       // change this later on to javier page
-      onNavigate('landing')
+      navigate('/')
     } catch (err) {
       setError(err.message)
     }
@@ -48,7 +50,7 @@ function SignIn({ onNavigate }) {
 
         {/* Brand anchor */}
         <div className="si-brand">
-          <div className="si-logo" onClick={() => onNavigate('landing')}>
+          <div className="si-logo" onClick={() => navigate('/')}>
             <span>🌿</span>
             <span>RecipeGen</span>
           </div>
