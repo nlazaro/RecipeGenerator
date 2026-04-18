@@ -1,15 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
 
-const ingredients = [
-    { id: "01", name: "Heirloom Tomatoes", detail: "Approx. 400g • Ripe" },
-    { id: "02", name: "Fresh Basil Leaves", detail: "1 bunch • Organic" },
-    { id: "03", name: "Garlic Bulbs", detail: "2 units • Purple" },
-    { id: "04", name: "Extra Virgin Olive Oil", detail: "Visible in frame" },
-];
-
 export default function recipe_review() {
+
+    const [ingredients, setIngredients] = useState([
+        { id: "01", name: "Heirloom Tomatoes", detail: "Approx. 400g • Ripe" },
+        { id: "02", name: "Fresh Basil Leaves", detail: "1 bunch • Organic" },
+        { id: "03", name: "Garlic Bulbs", detail: "2 units • Purple" },
+        { id: "04", name: "Extra Virgin Olive Oil", detail: "Visible in frame" },
+    ]);
+
+    const removeIngredient = (id) => {
+        setIngredients(ingredients.filter(item => item.id !== id));
+    };
+
+    const addIngredient = () => {
+        const newItem = {
+            // id: Date.now().toString(),
+            name: "New Ingredient",
+            detail: "Edit me",
+        };
+        setIngredients([...ingredients, newItem]);
+    };
+
+    const editIngredient = (id) => {
+        const newName = prompt("Enter new name:");
+        if (!newName) return;
+
+        setIngredients(
+            ingredients.map(item =>
+                item.id === id ? { ...item, name: newName } : item
+            )
+        );
+    };
 
     const navigate = useNavigate();
 
@@ -44,7 +68,16 @@ export default function recipe_review() {
                                     <p className="name">{item.name}</p>
                                     <p className="detail">{item.detail}</p>
                                 </div>
-                                <span className="edit">✎</span>
+                                <span
+                                    className="edit"
+                                    onClick={() => editIngredient(item.id)}
+                                >
+                                    ✎
+                                </span>
+
+                                <span
+                                    className="delete"
+                                    onClick={() => removeIngredient(item.id)}>🗑</span>
                             </div>
                         ))}
                     </div>
@@ -56,7 +89,9 @@ export default function recipe_review() {
                         CONFIRM SELECTION →
                     </button>
 
-                    <button className="secondary">ADD MISSING ITEM</button>
+                    <button className="secondary" onClick={addIngredient}>
+                        ADD MISSING ITEM
+                    </button>
                 </div>
             </div>
 

@@ -17,6 +17,7 @@ body {
 .header h1 {
     margin-top: 5px;
     font-size: 48px;
+    color: black;
 }
 
 .content {
@@ -99,6 +100,11 @@ body {
     cursor: pointer;
 }
 
+.delete {
+
+    cursor: pointer;
+}
+
 /* BUTTONS */
 .primary {
     width: 100%;
@@ -112,8 +118,8 @@ body {
 
 .secondary {
     width: 100%;
-    background: white;
-    border: 1px solid #ccc;
+    background: rgb(0, 0, 0);
+    border: 1px solid #000000;
     padding: 12px;
     margin-top: 10px;
     cursor: pointer;
