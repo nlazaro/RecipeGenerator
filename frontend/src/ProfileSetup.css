@@ -419,6 +419,154 @@
   transform: translateY(-1px);
 }
 
+/* ---- Body metrics — sex grid ---- */
+.ps-sex-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+}
+
+.ps-sex-btn {
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #181b27;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+  text-align: center;
+}
+
+.ps-sex-btn:hover {
+  border-color: #006947;
+  background: rgba(0, 105, 71, 0.03);
+}
+
+.ps-sex-btn--selected {
+  border-color: #006947;
+  background: rgba(0, 105, 71, 0.07);
+  color: #006947;
+}
+
+/* ---- Unit row (ft/in, lbs) ---- */
+.ps-unit-row {
+  display: flex;
+  gap: 10px;
+}
+
+.ps-unit-input {
+  position: relative;
+  flex: 1;
+}
+
+.ps-unit-input--wide {
+  flex: 0 0 160px;
+}
+
+.ps-unit-input input {
+  width: 100%;
+  padding: 13px 40px 13px 16px;
+  background: #f3f2ff;
+  border: 1.5px solid transparent;
+  border-radius: 0.5rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  color: #181b27;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.ps-unit-input input::placeholder {
+  color: #727786;
+  opacity: 0.55;
+}
+
+.ps-unit-input input:focus {
+  background: #ffffff;
+  border-color: #006947;
+  box-shadow: 0 0 0 3px rgba(0, 105, 71, 0.09);
+}
+
+.ps-unit-label {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* ---- Field gap helper ---- */
+.ps-field--gap {
+  margin-top: 18px;
+}
+
+/* ---- Required / optional indicators ---- */
+.ps-required {
+  color: #c05050;
+  margin-left: 2px;
+}
+
+.ps-optional {
+  font-weight: 400;
+  color: #9ca3af;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+}
+
+/* ---- Fields row (side by side) ---- */
+.ps-fields-row {
+  display: flex;
+  gap: 12px;
+}
+
+.ps-fields-row .ps-field {
+  flex: 1;
+}
+
+/* ---- Textarea (medications / notes) ---- */
+.ps-textarea {
+  width: 100%;
+  padding: 13px 16px;
+  background: #f3f2ff;
+  border: 1.5px solid transparent;
+  border-radius: 0.5rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  color: #181b27;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  line-height: 1.55;
+}
+
+.ps-textarea::placeholder {
+  color: #727786;
+  opacity: 0.55;
+}
+
+.ps-textarea:focus {
+  background: #ffffff;
+  border-color: #006947;
+  box-shadow: 0 0 0 3px rgba(0, 105, 71, 0.09);
+}
+
+.ps-field-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */

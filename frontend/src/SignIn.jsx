@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './SignIn.css'
-import { auth, googleProvider } from './firebase'
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { auth, googleProvider, db } from './firebase'
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, getAdditionalUserInfo } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 
 function SignIn() {
   const navigate = useNavigate()
@@ -12,17 +13,27 @@ function SignIn() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState(null)
 
+  async function createUserDoc(user) {
+    await setDoc(doc(db, 'users', user.uid), {
+      email: user.email,
+      displayName: user.displayName ?? '',
+      createdAt: new Date(),
+    }, { merge: true })
+  }
+
   async function handleEmailSubmit(e) {
     e.preventDefault()
     setError(null)
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password)
+        const result = await createUserWithEmailAndPassword(auth, email, password)
+        await createUserDoc(result.user)
+        navigate('/profile')
       } else {
-        await signInWithEmailAndPassword(auth, email, password)
+        const result = await signInWithEmailAndPassword(auth, email, password)
+        await createUserDoc(result.user)
+        navigate('/')
       }
-      // change this later on to javiers page
-      navigate('/')
     } catch (err) {
       setError(err.message)
     }
@@ -31,9 +42,10 @@ function SignIn() {
   async function handleGoogle() {
     setError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
-      // change this later on to javier page
-      navigate('/')
+      const result = await signInWithPopup(auth, googleProvider)
+      await createUserDoc(result.user)
+      const { isNewUser } = getAdditionalUserInfo(result)
+      navigate(isNewUser ? '/profile' : '/')
     } catch (err) {
       setError(err.message)
     }
