@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, addDoc } from "firebase/firestore";
 
-const RECIPE_URL = "http://localhost:8000/generate-recipes"; // swap when teammate is ready
+const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
 export default function recipe_review() {
     const navigate = useNavigate();
@@ -14,6 +14,8 @@ export default function recipe_review() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [mode, setMode] = useState("image");
+    const [textInput, setTextInput] = useState("");
 
     const removeIngredient = (id) => {
         setIngredients((prev) => prev.filter((item) => item.id !== id));
@@ -21,7 +23,7 @@ export default function recipe_review() {
 
     const addIngredient = () => {
         const newItem = {
-            //id: Date.now().toString(),
+            id: Date.now().toString(), // ✅ FIXED
             name: "New Ingredient",
             detail: "Edit me",
         };
@@ -44,7 +46,10 @@ export default function recipe_review() {
         setError("");
         setLoading(true);
 
-        const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
+        const inventory = ingredients.map((item) => ({
+            item_name: item.name,
+            detail: item.detail,
+        }));
 
         try {
             await addDoc(collection(db, "inventories"), {
@@ -61,6 +66,7 @@ export default function recipe_review() {
 
             if (!response.ok) throw new Error(`Recipe API error: ${response.status}`);
             const data = await response.json();
+
             navigate("/confirmation", { state: { recipes: data } });
         } catch (err) {
             setError("Inventory saved! Recipe generation failed: " + err.message);
@@ -71,6 +77,41 @@ export default function recipe_review() {
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleTextSubmit = async () => {
+        if (!textInput.trim()) return;
+
+        setError("");
+        setLoading(true);
+
+        try {
+            const response = await fetch("http://localhost:8000/analyze-text", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: textInput }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Failed to analyze text.");
+            }
+
+            const mappedIngredients = (data.inventory || []).map((item, index) => ({
+                id: String(index + 1).padStart(2, "0"),
+                name: item.item_name,
+                detail: `${item.category} • Qty: ${item.count}`,
+            }));
+
+            setIngredients(mappedIngredients);
+            setSelectedImage(null); // ✅ clear image
+        } catch (err) {
+            setError(err.message || "Something went wrong.");
+            setIngredients([]);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleFileChange = async (e) => {
@@ -116,66 +157,113 @@ export default function recipe_review() {
     return (
         <div className="container">
             <header className="header">
-                <h4>{loading ? "ANALYZING IMAGE" : "ANALYSIS COMPLETE"}</h4>
+                <h4>
+                    {loading
+                        ? mode === "image"
+                            ? "ANALYZING IMAGE"
+                            : "ANALYZING TEXT"
+                        : "ANALYSIS COMPLETE"}
+                </h4>
                 <h1>IDENTIFIED ITEMS</h1>
             </header>
 
             <div className="content">
-                <div className="imageSection">
-                    {!selectedImage ? (
-                        <div
-                            className="uploadBox"
-                            onClick={handleUploadClick}
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                minHeight: "500px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexDirection: "column",
-                                cursor: "pointer",
-                                border: "2px dashed #ccc",
-                                borderRadius: "8px",
-                                background: "#f8f8f8",
-                            }}
-                        >
-                            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
-                            <p style={{ margin: 0, fontWeight: "600" }}>
-                                Click to upload image
-                            </p>
-                            <p style={{ marginTop: "8px", color: "#777" }}>
-                                JPG, PNG, WEBP supported
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <img src={selectedImage} alt="Uploaded ingredient" />
-                            {loading && (
-                                <div className="tag top">Analyzing image...</div>
-                            )}
-                            {!loading && ingredients[0] && (
-                                <div className="tag top">
-                                    Detected • {ingredients[0].name}
-                                </div>
-                            )}
-                            {!loading && ingredients[1] && (
-                                <div className="tag bottom">
-                                    Detected • {ingredients[1].name}
-                                </div>
-                            )}
-                        </>
-                    )}
 
-                    <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        style={{ display: "none" }}
-                    />
+                {/* ✅ TOGGLE */}
+                <div style={{ marginBottom: "16px", display: "flex", gap: "10px" }}>
+                    <button
+                        onClick={() => {
+                            setMode("image");
+                            setTextInput("");
+                        }}
+                        style={{
+                            padding: "8px 16px",
+                            background: mode === "image" ? "#000" : "#ddd",
+                            color: mode === "image" ? "#fff" : "#000",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Upload Image
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setMode("text");
+                            setSelectedImage(null);
+                        }}
+                        style={{
+                            padding: "8px 16px",
+                            background: mode === "text" ? "#000" : "#ddd",
+                            color: mode === "text" ? "#fff" : "#000",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Type Ingredients
+                    </button>
                 </div>
 
+                {/* ✅ IMAGE / TEXT SECTION */}
+                <div className="imageSection">
+
+                    {mode === "text" && (
+                        <div style={{ width: "100%" }}>
+                            <textarea
+                                placeholder="e.g. 2 apples, 1 gallon milk, chicken breast"
+                                value={textInput}
+                                onChange={(e) => setTextInput(e.target.value)}
+                                style={{
+                                    width: "100%",
+                                    minHeight: "150px",
+                                    padding: "12px",
+                                    borderRadius: "8px",
+                                    border: "1px solid #ccc",
+                                    marginBottom: "12px",
+                                }}
+                            />
+
+                            <button
+                                onClick={handleTextSubmit}
+                                disabled={loading || !textInput.trim()}
+                                className="primary"
+                            >
+                                Analyze Text
+                            </button>
+                        </div>
+                    )}
+
+                    {mode === "image" && (
+                        <>
+                            {!selectedImage ? (
+                                <div className="uploadBox" onClick={handleUploadClick}>
+                                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
+                                    <p>Click to upload image</p>
+                                    <p style={{ color: "#777" }}>
+                                        JPG, PNG, WEBP supported
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <img src={selectedImage} alt="Uploaded ingredient" />
+                                    {loading && <div className="tag top">Analyzing image...</div>}
+                                </>
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                style={{ display: "none" }}
+                            />
+                        </>
+                    )}
+                </div>
+
+                {/* ✅ PANEL */}
                 <div className="panel">
                     <div className="panelHeader">
                         <h3>INGREDIENTS</h3>
@@ -195,17 +283,11 @@ export default function recipe_review() {
                                     <p className="detail">{item.detail}</p>
                                 </div>
 
-                                <span
-                                    className="edit"
-                                    onClick={() => editIngredient(item.id)}
-                                >
+                                <span className="edit" onClick={() => editIngredient(item.id)}>
                                     ✎
                                 </span>
 
-                                <span
-                                    className="delete"
-                                    onClick={() => removeIngredient(item.id)}
-                                >
+                                <span className="delete" onClick={() => removeIngredient(item.id)}>
                                     🗑
                                 </span>
                             </div>
