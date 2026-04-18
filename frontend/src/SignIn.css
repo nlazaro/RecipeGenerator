@@ -1,0 +1,395 @@
+/* ============================================================
+   SIGN-IN PAGE — RecipeGen  ("The Encouraging Curator")
+   Follows the Editorial Health design system:
+   surface #f6f6ff · primary green · Manrope · no hard borders
+   ============================================================ */
+
+.si-page {
+  min-height: 100vh;
+  background: #f3f2ff;          /* surface-container-low */
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: #181b27;                /* on-surface */
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ---- Ambient blobs ---- */
+.si-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.si-blob-tl {
+  top: -12%;
+  left: -6%;
+  width: 42vw;
+  height: 42vw;
+  background: rgba(105, 246, 184, 0.22);
+}
+
+.si-blob-br {
+  bottom: -12%;
+  right: -6%;
+  width: 36vw;
+  height: 36vw;
+  background: rgba(0, 105, 71, 0.1);
+}
+
+/* ---- Main ---- */
+.si-main {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px 48px;
+}
+
+/* ---- Brand ---- */
+.si-brand {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.si-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #181b27;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.si-logo span:first-child { font-size: 1.4rem; }
+
+.si-tagline {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #424655;              /* on-surface-variant */
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* ---- Card ---- */
+.si-card {
+  width: 100%;
+  max-width: 448px;
+  background: #ffffff;         /* surface-container-lowest */
+  border-radius: 1.5rem;       /* rounded-xl per design system */
+  padding: 40px 40px 36px;
+  box-shadow: 0 12px 40px rgba(24, 27, 39, 0.06);  /* editorial-shadow */
+}
+
+.si-card-head {
+  margin-bottom: 32px;
+}
+
+.si-card-head h2 {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #181b27;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px 0;
+}
+
+.si-card-head p {
+  font-size: 0.875rem;
+  color: #424655;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ---- Form ---- */
+.si-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.si-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.si-field label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #424655;
+  text-transform: uppercase;
+}
+
+.si-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.si-forgot {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #006947;
+  text-decoration: none;
+  transition: opacity 0.18s;
+}
+
+.si-forgot:hover { opacity: 0.75; }
+
+.si-input-wrap {
+  position: relative;
+}
+
+.si-field input,
+.si-input-wrap input {
+  width: 100%;
+  padding: 13px 16px;
+  background: #f3f2ff;          /* surface-container-low */
+  border: 1.5px solid transparent;
+  border-radius: 0.5rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.875rem;
+  color: #181b27;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.si-input-wrap input { padding-right: 44px; }
+
+.si-field input::placeholder,
+.si-input-wrap input::placeholder {
+  color: #727786;               /* outline */
+  opacity: 0.55;
+}
+
+.si-field input:focus,
+.si-input-wrap input:focus {
+  background: #ffffff;
+  border-color: #006947;
+  box-shadow: 0 0 0 3px rgba(0, 105, 71, 0.09);
+}
+
+.si-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.18s;
+}
+
+.si-eye:hover { opacity: 1; }
+
+/* Primary submit */
+.si-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #006947, #69f6b8);
+  color: #ffffff;
+  border: none;
+  font-family: 'Manrope', inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 15px;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 105, 71, 0.18);
+  transition: box-shadow 0.2s, transform 0.18s;
+}
+
+.si-submit:hover {
+  box-shadow: 0 6px 20px rgba(0, 105, 71, 0.34);
+  transform: translateY(-1px);
+}
+
+.si-submit:active { transform: translateY(0); }
+
+/* ---- Divider ---- */
+.si-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.si-divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e6e7f8;          /* surface-container-high */
+}
+
+.si-divider-text {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #727786;               /* outline */
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- Social buttons ---- */
+.si-social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.si-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f3f2ff;          /* surface-container-low */
+  border: none;
+  border-radius: 0.5rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #181b27;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.si-social-btn:hover { background: #e5deff; }
+
+.si-social-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e0e1f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #424655;
+  flex-shrink: 0;
+  line-height: 22px;
+  text-align: center;
+}
+
+.si-fb { color: #1877f2; }
+
+/* ---- Switch ---- */
+.si-switch {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #424655;
+  margin: 0;
+}
+
+.si-link {
+  color: #006947;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.si-link:hover { text-decoration: underline; }
+
+/* ---- Security note ---- */
+.si-security {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 448px;
+  margin: 20px 0 0;
+  padding: 0 6px;
+}
+
+.si-security-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+.si-security p {
+  font-size: 0.77rem;
+  color: #424655;
+  line-height: 1.6;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* ---- Footer ---- */
+.si-footer {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;          /* surface-container-lowest — tonal shift, no border */
+  padding: 32px 24px 20px;
+}
+
+.si-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.si-footer-brand {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #181b27;
+  letter-spacing: -0.02em;
+}
+
+.si-footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.si-footer-links a {
+  color: #424655;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: color 0.18s;
+}
+
+.si-footer-links a:hover { color: #006947; }
+
+.si-footer-social {
+  display: flex;
+  gap: 12px;
+  font-size: 1.05rem;
+  color: #727786;
+  cursor: pointer;
+}
+
+.si-footer-copy {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #727786;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 520px) {
+  .si-card { padding: 32px 24px 28px; border-radius: 1rem; }
+  .si-footer-inner { flex-direction: column; text-align: center; }
+  .si-footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+}
