@@ -1,15 +1,6 @@
-from dotenv import load_dotenv
-from groq import Groq
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, File, HTTPException, UploadFile
 import base64
 import json
 import os
-from pydantic import BaseModel
-
-
-class TextRequest(BaseModel):
-    text: str
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -90,6 +81,10 @@ class RecipeRequest(BaseModel):
     disliked_recipes: list[str] = []
 
 
+class TextRequest(BaseModel):
+    text: str
+
+
 @app.post("/generate-recipes")
 async def generate_recipes(body: RecipeRequest):
     if not body.inventory:
@@ -128,17 +123,14 @@ async def generate_recipes(body: RecipeRequest):
     return result
 
 
-# ✅ IMAGE ENDPOINT (unchanged)
 @app.post("/analyze-image")
 async def analyze_image(image: UploadFile = File(...)):
     if not image.content_type or not image.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=400, detail="Uploaded file must be an image.")
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
 
     image_bytes = await image.read()
     if not image_bytes:
-        raise HTTPException(
-            status_code=400, detail="Uploaded image file is empty.")
+        raise HTTPException(status_code=400, detail="Uploaded image file is empty.")
 
     mime_type = image.content_type or "image/jpeg"
     b64_image = base64.b64encode(image_bytes).decode("utf-8")
@@ -160,56 +152,47 @@ async def analyze_image(image: UploadFile = File(...)):
             ],
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Groq API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
 
     raw_content = response.choices[0].message.content
     try:
         result = json.loads(raw_content)
     except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=500, detail="Model returned non-JSON response.")
+        raise HTTPException(status_code=500, detail="Model returned non-JSON response.")
 
     if "inventory" not in result:
-        raise HTTPException(
-            status_code=500, detail="Model response missing 'inventory' key.")
+        raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
 
     return result
 
 
-# ✅ NEW TEXT ENDPOINT
 @app.post("/analyze-text")
 async def analyze_text(payload: TextRequest):
-    text = payload.text
-    if not text.strip():
-        raise HTTPException(
-            status_code=400, detail="Text input cannot be empty.")
+    if not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Text input cannot be empty.")
 
     try:
         response = client.chat.completions.create(
             model="meta-llama/llama-4-scout-17b-16e-instruct",
             response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": INVENTORY_PROMPT},
                 {
                     "role": "user",
-                    "content": f"Convert this food list into structured inventory JSON: {text}",
+                    "content": f"Convert this food list into structured inventory JSON: {payload.text}",
                 },
             ],
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Groq API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
 
     raw_content = response.choices[0].message.content
     try:
         result = json.loads(raw_content)
     except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=500, detail="Model returned non-JSON response.")
+        raise HTTPException(status_code=500, detail="Model returned non-JSON response.")
 
     if "inventory" not in result:
-        raise HTTPException(
-            status_code=500, detail="Model response missing 'inventory' key.")
+        raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
 
     return result
