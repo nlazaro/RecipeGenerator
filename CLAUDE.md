@@ -35,6 +35,9 @@ RecipeGen is a web/mobile application that turns a user's available ingredients 
 - **AI / ML**: Gemini API (recipe generation + vision classification), ElevenLabs (TTS voice guidance)
 - **Auth**: Firebase Auth (email/password + Google OAuth)
 
+## Always Do First
+- **Invoke the `frontend-design` skill** before writing any frontend code, every session, no exceptions.
+
 ## Design System
 
 - Font: Manrope
@@ -54,3 +57,13 @@ RecipeGen is a web/mobile application that turns a user's available ingredients 
 - Second navbar chips highlight based on `IntersectionObserver` — `rootMargin: '-15% 0px -75% 0px'`
 - Pokebowl hero image: `src/assets/poke.png`
 - Tuscan pasta image: `src/assets/tuscan-pasta.jpg`
+
+## Screenshot Workflow
+- Puppeteer is installed locally in the project (`node_modules`).
+- **Always screenshot from localhost:** `node screenshot.mjs http://localhost:5173`
+- Screenshots are saved automatically to `./temporary_screenshots/screenshot-N.png` (auto-incremented).
+- Optional label suffix: `node screenshot.mjs http://localhost:5173 label` → saves as `screenshot-N-label.png`
+- `screenshot.mjs` lives in the project root.
+- After screenshotting, read the PNG from `./temporary_screenshots/` with the Read tool so you can see and analyze the image directly.
+- When comparing, be specific: "heading is 32px but reference shows ~24px", "card gap is 16px but should be 24px"
+- Check: spacing/padding, font size/weight/line-height, colors, alignment, border-radius, shadows, image sizing
