@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { db, auth } from "./firebase";
+import { collection, addDoc } from "firebase/firestore";
 import "./confirmation.css";
 
 export default function Confirmation() {
@@ -7,6 +9,47 @@ export default function Confirmation() {
     const navigate = useNavigate();
     const recipeList = location.state?.recipes?.recipes || [];
     const [selected, setSelected] = useState(null);
+
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [feedback, setFeedback] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+
+    function handleSelectRecipe(i) {
+        setSelected(i);
+        setIsFavorited(false);
+        setRating(0);
+        setHoverRating(0);
+        setFeedback("");
+        setSaved(false);
+    }
+
+    async function handleSave() {
+        const uid = auth.currentUser?.uid;
+        if (!uid || selected === null) return;
+        const recipe = recipeList[selected];
+        setSaving(true);
+        try {
+            await addDoc(collection(db, "users", uid, "recipes"), {
+                title: recipe.title,
+                description: recipe.description,
+                ingredients: recipe.ingredients,
+                steps: recipe.steps,
+                prep_time: recipe.prep_time,
+                cook_time: recipe.cook_time,
+                servings: recipe.servings,
+                isFavorited,
+                rating: rating || null,
+                feedback: feedback.trim() || null,
+                savedAt: new Date(),
+            });
+            setSaved(true);
+        } finally {
+            setSaving(false);
+        }
+    }
 
     if (!recipeList.length) {
         return (
@@ -62,9 +105,58 @@ export default function Confirmation() {
                             </div>
                         </div>
 
-                        <div className="sidebar-buttons">
-                            <button className="btn btn-dark">SAVE TO COLLECTION</button>
-                            <button className="btn btn-light" onClick={() => navigate("/review")}>START OVER</button>
+                        {/* Favorite + Rating */}
+                        <div className="save-block">
+                            <div className="favorite-row">
+                                <button
+                                    className={`fav-btn ${isFavorited ? "fav-active" : ""}`}
+                                    onClick={() => setIsFavorited(v => !v)}
+                                    aria-label="Toggle favourite"
+                                >
+                                    {isFavorited ? "♥" : "♡"} {isFavorited ? "Favourited" : "Add to Favourites"}
+                                </button>
+                            </div>
+
+                            <div className="rating-row">
+                                <span className="rating-label">RATE THIS RECIPE</span>
+                                <div className="stars">
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                        <button
+                                            key={n}
+                                            className={`star ${n <= (hoverRating || rating) ? "star-on" : ""}`}
+                                            onClick={() => setRating(n)}
+                                            onMouseEnter={() => setHoverRating(n)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            aria-label={`Rate ${n} stars`}
+                                        >
+                                            ★
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="feedback-row">
+                                <span className="rating-label">FEEDBACK (OPTIONAL)</span>
+                                <textarea
+                                    className="feedback-input"
+                                    placeholder="e.g. Too salty, great texture, would make again..."
+                                    value={feedback}
+                                    onChange={e => setFeedback(e.target.value)}
+                                    rows={3}
+                                />
+                            </div>
+
+                            <button
+                                className="btn btn-dark"
+                                onClick={handleSave}
+                                disabled={saving || saved}
+                            >
+                                {saved ? "✓ SAVED" : saving ? "SAVING..." : "SAVE TO COLLECTION"}
+                            </button>
+
+                            <button className="btn btn-light" onClick={() => navigate("/review")}>
+                                START OVER
+                            </button>
                         </div>
                     </aside>
                 </main>
@@ -123,7 +215,7 @@ export default function Confirmation() {
 
             <div className="recipe-cards">
                 {recipeList.map((recipe, i) => (
-                    <div className="recipe-card" key={i} onClick={() => setSelected(i)}>
+                    <div className="recipe-card" key={i} onClick={() => handleSelectRecipe(i)}>
                         <div className="card-number">{String(i + 1).padStart(2, "0")}</div>
                         <div className="card-body">
                             <h2 className="card-title">{recipe.title}</h2>
