@@ -3,10 +3,18 @@ import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { useEffect } from "react";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
 export default function recipe_review() {
+
+    const removeImage = (indexToRemove) => {
+        setSelectedImages((prev) =>
+            prev.filter((_, index) => index !== indexToRemove)
+        );
+    };
+
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
@@ -16,6 +24,11 @@ export default function recipe_review() {
     const [error, setError] = useState("");
     const [mode, setMode] = useState("image");
     const [textInput, setTextInput] = useState("");
+
+    useEffect(() => {
+        const allIngredients = selectedImages.flatMap(img => img.ingredients || []);
+        setIngredients(allIngredients);
+    }, [selectedImages]);
 
     const removeIngredient = (id) => {
         setIngredients((prev) => prev.filter((item) => item.id !== id));
@@ -126,6 +139,7 @@ export default function recipe_review() {
         const newPreviews = files.map((file) => ({
             file,
             url: URL.createObjectURL(file),
+            ingredients: [], // 👈 attach ingredients to this image
         }));
 
         // Add to existing images
@@ -153,7 +167,16 @@ export default function recipe_review() {
                 detail: `${item.category} • Qty: ${item.count}`,
             }));
 
-            setIngredients(mappedIngredients);
+            setSelectedImages((prev) => {
+                const updated = [...prev];
+
+                // attach ingredients to the LAST added image
+                const lastIndex = updated.length - newPreviews.length;
+
+                updated[lastIndex].ingredients = mappedIngredients;
+
+                return updated;
+            });
         } catch (err) {
             setError(err.message || "Something went wrong.");
         } finally {
@@ -256,12 +279,38 @@ export default function recipe_review() {
                                     {/* Show all uploaded images */}
                                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                                         {selectedImages.map((img, index) => (
-                                            <img
+                                            <div
                                                 key={index}
-                                                src={img.url}
-                                                alt="Uploaded"
-                                                style={{ width: "120px", borderRadius: "8px" }}
-                                            />
+                                                style={{ position: "relative", display: "inline-block" }}
+                                            >
+                                                <img
+                                                    src={img.url}
+                                                    alt="Uploaded"
+                                                    style={{ width: "120px", borderRadius: "8px" }}
+                                                />
+
+                                                {/* ❌ Delete button */}
+                                                <button
+                                                    onClick={() => removeImage(index)}
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: "5px",
+                                                        right: "5px",
+                                                        background: "rgba(0,0,0,0.6)",
+                                                        color: "#fff",
+                                                        border: "none",
+                                                        borderRadius: "50%",
+                                                        width: "24px",
+                                                        height: "24px",
+                                                        cursor: "pointer",
+                                                        fontSize: "14px",
+                                                        lineHeight: "24px",
+                                                        textAlign: "center",
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
                                         ))}
                                     </div>
 
