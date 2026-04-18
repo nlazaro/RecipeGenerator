@@ -3,6 +3,7 @@ import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, getDocs, query, orderBy, doc, setDoc } from "firebase/firestore";
+import { useEffect } from "react";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
