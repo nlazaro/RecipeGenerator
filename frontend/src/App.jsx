@@ -1,16 +1,22 @@
-import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Landing from './Landing'
 import SignIn from './SignIn'
 import ProfileSetup from './ProfileSetup'
-import Landing from './Landing'
-import './App.css'
+import RecipeReview from './RecipeReview'
+import Confirmation from './Confirmation'
 
 function App() {
-  const [page, setPage] = useState('landing')
-
-  if (page === 'signin') return <SignIn onNavigate={setPage} />
-  if (page === 'profile') return <ProfileSetup onNavigate={setPage} />
-
-  return <Landing onNavigate={setPage} />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/profile" element={<ProfileSetup />} />
+        <Route path="/review" element={<RecipeReview />} />
+        <Route path="/confirmation" element={<Confirmation />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
 export default App
