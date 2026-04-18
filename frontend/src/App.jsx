@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SignIn from './SignIn'
+import ProfileSetup from './ProfileSetup'
 import pokeImg from './assets/poke.png'
 import tuscanImg from './assets/tuscan-pasta.jpg'
 import './App.css'
@@ -44,6 +45,7 @@ function App() {
   }, [page])
 
   if (page === 'signin') return <SignIn onNavigate={setPage} />
+  if (page === 'profile') return <ProfileSetup onNavigate={setPage} />
 
   return (
     <div className="landing">
@@ -567,7 +569,7 @@ function App() {
               </div>
 
               <div className="db-cta">
-                <button className="btn-primary-hero">Configure Your Profile</button>
+                <button className="btn-primary-hero" onClick={() => setPage('profile')}>Configure Your Profile</button>
               </div>
             </div>
 
