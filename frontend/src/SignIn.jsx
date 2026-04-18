@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './SignIn.css'
-import { auth, googleProvider } from './firebase'
+import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 
 function SignIn() {
   const navigate = useNavigate()
@@ -12,16 +13,22 @@ function SignIn() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState(null)
 
+  async function createUserDoc(user) {
+    await setDoc(doc(db, 'users', user.uid), {
+      email: user.email,
+      displayName: user.displayName ?? '',
+      createdAt: new Date(),
+    }, { merge: true })
+  }
+
   async function handleEmailSubmit(e) {
     e.preventDefault()
     setError(null)
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password)
-      } else {
-        await signInWithEmailAndPassword(auth, email, password)
-      }
-      // change this later on to javiers page
+      const result = isSignUp
+        ? await createUserWithEmailAndPassword(auth, email, password)
+        : await signInWithEmailAndPassword(auth, email, password)
+      await createUserDoc(result.user)
       navigate('/')
     } catch (err) {
       setError(err.message)
@@ -31,8 +38,8 @@ function SignIn() {
   async function handleGoogle() {
     setError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
-      // change this later on to javier page
+      const result = await signInWithPopup(auth, googleProvider)
+      await createUserDoc(result.user)
       navigate('/')
     } catch (err) {
       setError(err.message)
