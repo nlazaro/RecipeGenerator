@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db, auth } from './firebase'
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore'
 
 const ANALYZE_URL = 'http://localhost:8000/analyze-image'
 const RECIPE_URL = 'http://localhost:8000/generate-recipes' // swap when teammate is ready
@@ -60,32 +60,31 @@ export default function ImageUpload() {
   async function handleConfirm() {
     if (!inventory || inventory.length === 0) return
     const uid = auth.currentUser?.uid
+    let liked_recipes = []
+    let disliked_recipes = []
 
     if (uid) {
       await setDoc(doc(db, 'users', uid), {
         inventory,
         inventoryUpdatedAt: new Date(),
       }, { merge: true })
+
+      const snap = await getDocs(query(collection(db, 'users', uid, 'recipes'), orderBy('savedAt', 'desc')))
+      const saved = snap.docs.map(d => d.data()).filter(r => r.rating)
+      liked_recipes = saved.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title)
+      disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title)
     }
 
     try {
       const response = await fetch(RECIPE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inventory })
+        body: JSON.stringify({ inventory, liked_recipes, disliked_recipes })
       })
       if (!response.ok) throw new Error(`Recipe API error: ${response.status}`)
       const data = await response.json()
 
-      if (uid) {
-        await addDoc(collection(db, 'users', uid, 'recipes'), {
-          recipes: data,
-          inventoryUsed: inventory,
-          createdAt: new Date(),
-        })
-      }
-
-      alert('Recipes generated!\n\n' + JSON.stringify(data, null, 2))
+      navigate('/confirmation', { state: { recipes: data, inventory } })
     } catch (err) {
       alert('Inventory saved! Recipe generation failed: ' + err.message)
     }

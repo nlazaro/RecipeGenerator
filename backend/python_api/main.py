@@ -86,6 +86,8 @@ class InventoryItem(BaseModel):
 
 class RecipeRequest(BaseModel):
     inventory: list[InventoryItem]
+    liked_recipes: list[str] = []
+    disliked_recipes: list[str] = []
 
 
 @app.post("/generate-recipes")
@@ -97,6 +99,14 @@ async def generate_recipes(body: RecipeRequest):
         f"- {item.item_name} (x{item.count})" for item in body.inventory
     )
     prompt = f"{RECIPE_PROMPT}\n\nAvailable ingredients:\n{item_list}"
+
+    if body.liked_recipes:
+        liked = "\n".join(f"- {t}" for t in body.liked_recipes)
+        prompt += f"\n\nThe user has enjoyed these recipes before — suggest something in a similar style:\n{liked}"
+
+    if body.disliked_recipes:
+        disliked = "\n".join(f"- {t}" for t in body.disliked_recipes)
+        prompt += f"\n\nThe user did NOT enjoy these recipes — avoid suggesting anything similar:\n{disliked}"
 
     try:
         response = client.chat.completions.create(
