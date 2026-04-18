@@ -122,7 +122,7 @@ function Landing() {
 
                     <button
                         className="btn-primary-hero"
-                        onClick={() => auth.currentUser ? navigate('/scan') : navigate('/signin')}
+                        onClick={() => auth.currentUser ? navigate('/review') : navigate('/signin')}
                     >
                         Start Your Recipe
                     </button>
