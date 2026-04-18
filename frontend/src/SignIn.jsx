@@ -1,8 +1,41 @@
 import { useState } from 'react'
 import './SignIn.css'
+import { auth, googleProvider } from './firebase'
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 
 function SignIn({ onNavigate }) {
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleEmailSubmit(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password)
+      } else {
+        await signInWithEmailAndPassword(auth, email, password)
+      }
+      // change this later on to javiers page
+      onNavigate('landing')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleGoogle() {
+    setError(null)
+    try {
+      await signInWithPopup(auth, googleProvider)
+      // change this later on to javier page
+      onNavigate('landing')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   return (
     <div className="si-page">
@@ -29,7 +62,7 @@ function SignIn({ onNavigate }) {
             <p>Please enter your details to access your recipe journal.</p>
           </div>
 
-          <form className="si-form" onSubmit={e => e.preventDefault()}>
+          <form className="si-form" onSubmit={handleEmailSubmit}>
 
             {/* Email */}
             <div className="si-field">
@@ -39,6 +72,8 @@ function SignIn({ onNavigate }) {
                 type="email"
                 placeholder="name@example.com"
                 autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
               />
             </div>
 
@@ -54,6 +89,8 @@ function SignIn({ onNavigate }) {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
@@ -66,7 +103,11 @@ function SignIn({ onNavigate }) {
               </div>
             </div>
 
-            <button type="submit" className="si-submit">Log In</button>
+            {error && <p style={{ color: 'red', fontSize: '0.85rem' }}>{error}</p>}
+
+            <button type="submit" className="si-submit">
+              {isSignUp ? 'Create Account' : 'Log In'}
+            </button>
           </form>
 
           {/* Divider */}
@@ -78,20 +119,18 @@ function SignIn({ onNavigate }) {
 
           {/* Social */}
           <div className="si-social">
-            <button className="si-social-btn">
+            <button className="si-social-btn" type="button" onClick={handleGoogle}>
               <span className="si-social-icon">G</span>
               Google
-            </button>
-            <button className="si-social-btn">
-              <span className="si-social-icon si-fb">f</span>
-              Facebook
             </button>
           </div>
 
           {/* Switch to sign up */}
           <p className="si-switch">
-            New to RecipeGen?{' '}
-            <a href="#" className="si-link">Create an account</a>
+            {isSignUp ? 'Already have an account? ' : 'New to RecipeGen? '}
+            <a href="#" className="si-link" onClick={e => { e.preventDefault(); setIsSignUp(v => !v) }}>
+              {isSignUp ? 'Log in' : 'Create an account'}
+            </a>
           </p>
         </div>
 
