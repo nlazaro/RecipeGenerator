@@ -1,0 +1,450 @@
+/* ============================================================
+   PROFILE SETUP PAGE — RecipeGen
+   Multi-step dietary onboarding. Matches SignIn.css aesthetic:
+   surface #f3f2ff · same blobs · Manrope · white card
+   ============================================================ */
+
+/* ---- Page shell ---- */
+.ps-page {
+  min-height: 100vh;
+  background: #f3f2ff;
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: #181b27;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Blobs are inherited from SignIn.css (.si-blob classes) */
+
+/* ---- Main ---- */
+.ps-main {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 64px;
+}
+
+/* ---- Brand ---- */
+.ps-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #181b27;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  margin-bottom: 36px;
+  transition: opacity 0.18s;
+  text-decoration: none;
+}
+
+.ps-brand:hover { opacity: 0.75; }
+
+.ps-brand span:first-child { font-size: 1.3rem; }
+
+/* ---- Card ---- */
+.ps-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 40px rgba(24, 27, 39, 0.06);
+  overflow: hidden;          /* clips the progress bar */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Completion variant — green gradient bg */
+.ps-card--completion {
+  background: linear-gradient(145deg, #006947 0%, #009960 55%, #00c47a 100%);
+  color: #ffffff;
+}
+
+/* ---- Progress bar ---- */
+.ps-progress-track {
+  width: 100%;
+  height: 4px;
+  background: #e6e7f8;
+  flex-shrink: 0;
+}
+
+.ps-card--completion .ps-progress-track {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ps-progress-fill {
+  height: 100%;
+  background: #006947;
+  border-radius: 0 100px 100px 0;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ps-card--completion .ps-progress-fill {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- Step counter ---- */
+.ps-step-counter {
+  padding: 18px 32px 0;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+/* ---- Card body ---- */
+.ps-card-body {
+  padding: 0 32px 8px;
+  flex: 1;
+}
+
+/* ---- Step wrapper ---- */
+.ps-step {
+  padding-top: 24px;
+}
+
+/* ---- Headings ---- */
+.ps-heading {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #181b27;
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+
+.ps-subheading {
+  font-size: 0.875rem;
+  color: #424655;
+  line-height: 1.55;
+  margin: 0 0 24px;
+}
+
+/* ---- Name input ---- */
+.ps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.ps-field label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #424655;
+}
+
+.ps-field input {
+  width: 100%;
+  padding: 13px 16px;
+  background: #f3f2ff;
+  border: 1.5px solid transparent;
+  border-radius: 0.5rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  color: #181b27;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.ps-field input::placeholder {
+  color: #727786;
+  opacity: 0.55;
+}
+
+.ps-field input:focus {
+  background: #ffffff;
+  border-color: #006947;
+  box-shadow: 0 0 0 3px rgba(0, 105, 71, 0.09);
+}
+
+/* ---- Option rows list ---- */
+.ps-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 4px;
+}
+
+/* ---- Individual option row ---- */
+.ps-option-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #181b27;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+
+.ps-option-row:hover {
+  border-color: #006947;
+  background: rgba(0, 105, 71, 0.03);
+}
+
+/* Selected — standard */
+.ps-option-row--selected {
+  border-color: #006947;
+  background: rgba(0, 105, 71, 0.07);
+  color: #006947;
+}
+
+/* Selected — allergy (red/warning tint) */
+.ps-option-row--allergy {
+  border-color: #c05050;
+  background: rgba(192, 80, 80, 0.06);
+  color: #c05050;
+}
+
+.ps-option-label {
+  flex: 1;
+}
+
+.ps-option-check {
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+/* ---- Step 5 sub-questions ---- */
+.ps-sub-question {
+  margin-bottom: 28px;
+}
+
+.ps-sub-question:last-child { margin-bottom: 0; }
+
+.ps-sub-heading {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #181b27;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+/* ---- Navigation buttons ---- */
+.ps-nav-btns {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 32px 28px;
+}
+
+/* BACK */
+.ps-btn-back {
+  padding: 12px 26px;
+  background: #ffffff;
+  border: 1.5px solid #181b27;
+  border-radius: 0.625rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #181b27;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  letter-spacing: -0.01em;
+}
+
+.ps-btn-back:hover { background: rgba(0, 0, 0, 0.04); }
+
+.ps-btn-back--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* NEXT / FINISH */
+.ps-btn-next {
+  padding: 12px 36px;
+  background: linear-gradient(135deg, #006947 0%, #00c47a 55%, #69f6b8 100%);
+  border: none;
+  border-radius: 0.625rem;
+  font-family: 'Manrope', inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 14px rgba(0, 105, 71, 0.28);
+  transition: box-shadow 0.18s, transform 0.18s, opacity 0.18s;
+}
+
+.ps-btn-next:hover:not(:disabled) {
+  box-shadow: 0 8px 24px rgba(0, 105, 71, 0.34);
+  transform: translateY(-1px);
+}
+
+.ps-btn-next:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ============================================================
+   STEP 6 — COMPLETION
+   ============================================================ */
+
+.ps-step--completion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 32px;
+  padding-bottom: 8px;
+}
+
+.ps-completion-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+}
+
+.ps-completion-heading {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+
+.ps-completion-sub {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+  margin: 0 0 28px;
+  max-width: 360px;
+}
+
+/* ---- Summary card ---- */
+.ps-summary-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 1rem;
+  padding: 20px 22px;
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  backdrop-filter: blur(8px);
+}
+
+.ps-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ps-summary-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ps-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ps-summary-chip {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.ps-summary-chip--green {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.ps-summary-chip--teal {
+  background: rgba(105, 246, 184, 0.2);
+  color: #c6fce7;
+  border: 1px solid rgba(105, 246, 184, 0.35);
+}
+
+.ps-summary-chip--red {
+  background: rgba(255, 160, 130, 0.18);
+  color: #ffd4c5;
+  border: 1px solid rgba(255, 160, 130, 0.3);
+}
+
+/* ---- CTA button ---- */
+.ps-cta-btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 15px 32px;
+  background: #ffffff;
+  border: none;
+  border-radius: 0.75rem;
+  font-family: 'Manrope', inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #006947;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  transition: box-shadow 0.18s, transform 0.18s;
+  margin-bottom: 8px;
+}
+
+.ps-cta-btn:hover {
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 560px) {
+  .ps-card {
+    border-radius: 1rem;
+  }
+
+  .ps-card-body {
+    padding: 0 22px 8px;
+  }
+
+  .ps-step-counter {
+    padding: 16px 22px 0;
+  }
+
+  .ps-nav-btns {
+    padding: 18px 22px 24px;
+  }
+
+  .ps-heading {
+    font-size: 1.3rem;
+  }
+
+  .ps-option-row {
+    padding: 12px 16px;
+  }
+}

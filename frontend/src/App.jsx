@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import SignIn from './SignIn'
+import ProfileSetup from './ProfileSetup'
 import pokeImg from './assets/poke.png'
 import tuscanImg from './assets/tuscan-pasta.jpg'
 import './App.css'
@@ -44,6 +45,7 @@ function App() {
   }, [page])
 
   if (page === 'signin') return <SignIn onNavigate={setPage} />
+  if (page === 'profile') return <ProfileSetup onNavigate={setPage} />
 
   return (
     <div className="landing">
@@ -567,7 +569,7 @@ function App() {
               </div>
 
               <div className="db-cta">
-                <button className="btn-primary-hero">Configure Your Profile</button>
+                <button className="btn-primary-hero" onClick={() => setPage('profile')}>Configure Your Profile</button>
               </div>
             </div>
 
@@ -586,14 +588,32 @@ function App() {
 
       {/* Footer */}
       <footer className="footer">
-        <div className="footer-wrap">
-          <strong>RecipeGen</strong>
-          <div className="footer-links">
-            <a href="#">Contact Us</a>
-            <a href="#">Terms</a>
-            <a href="#">Privacy Policy</a>
+        <div className="footer-inner">
+
+          <div className="footer-top">
+            <div className="footer-brand">
+              <span className="footer-leaf">🌿</span>
+              <span>RecipeGen</span>
+            </div>
+            <nav className="footer-nav">
+              <a href="#">How It Works</a>
+              <a href="#">AI Recipes</a>
+              <a href="#">Nutrition</a>
+              <a href="#">Contact Us</a>
+            </nav>
           </div>
-          <span>© 2024. All rights reserved.</span>
+
+          <div className="footer-divider" />
+
+          <div className="footer-bottom">
+            <span className="footer-copy">© 2026 RecipeGen. All rights reserved.</span>
+            <div className="footer-legal">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+            </div>
+            <div className="footer-made">Built with 🌿 for demo day</div>
+          </div>
+
         </div>
       </footer>
 
