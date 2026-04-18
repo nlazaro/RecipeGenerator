@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './SignIn.css'
 import { auth, googleProvider } from './firebase'
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, getAdditionalUserInfo } from 'firebase/auth'
 
 function SignIn() {
   const navigate = useNavigate()
@@ -18,11 +18,11 @@ function SignIn() {
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password)
+        navigate('/profile')
       } else {
         await signInWithEmailAndPassword(auth, email, password)
+        navigate('/')
       }
-      // change this later on to javiers page
-      navigate('/')
     } catch (err) {
       setError(err.message)
     }
@@ -31,9 +31,9 @@ function SignIn() {
   async function handleGoogle() {
     setError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
-      // change this later on to javier page
-      navigate('/')
+      const result = await signInWithPopup(auth, googleProvider)
+      const { isNewUser } = getAdditionalUserInfo(result)
+      navigate(isNewUser ? '/profile' : '/')
     } catch (err) {
       setError(err.message)
     }
