@@ -1,5 +1,5 @@
 import React from "react";
-import "./confirmation.css";
+import "./Confirmation.css";
 
 const ingredientsLeft = [
     "2 Fresh Pacific Cod Fillets (6oz)",

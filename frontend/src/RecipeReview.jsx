@@ -84,7 +84,7 @@ export default function recipe_review() {
 
                     <button
                         className="primary"
-                        onClick={() => navigate("/confirmation")}
+                        onClick={() => navigate("/")}
                     >
                         CONFIRM SELECTION →
                     </button>

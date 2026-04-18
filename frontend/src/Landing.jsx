@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import pokeImg from './assets/poke.png'
 import tuscanImg from './assets/tuscan-pasta.jpg'
+import './App.css'
+import { useNavigate } from 'react-router-dom'
+
+
 
 const NAV_SECTIONS = [
     { id: 'recipe-scan', label: 'Recipe Scan' },
@@ -17,6 +21,7 @@ function scrollTo(id) {
 }
 
 function Landing({ onNavigate }) {
+    const navigate = useNavigate()
     const [showSecondNav, setShowSecondNav] = useState(false)
     const [activeSection, setActiveSection] = useState('recipe-scan')
 
@@ -103,7 +108,12 @@ function Landing({ onNavigate }) {
                         />
                     </div>
 
-                    <button className="btn-primary-hero">Start Your Recipe</button>
+                    <button
+                        className="btn-primary-hero"
+                        onClick={() => navigate('/review')}
+                    >
+                        Start Your Recipe
+                    </button>
                     <a href="#how-it-works" className="how-link">How It Works</a>
                 </div>
             </section>
