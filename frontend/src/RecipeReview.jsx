@@ -11,7 +11,7 @@ export default function recipe_review() {
     const fileInputRef = useRef(null);
 
     const [ingredients, setIngredients] = useState([]);
-    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [mode, setMode] = useState("image");
@@ -99,12 +99,13 @@ export default function recipe_review() {
             }
 
             const mappedIngredients = (data.inventory || []).map((item, index) => ({
+                id: Date.now().toString() + Math.random(),
                 id: String(index + 1).padStart(2, "0"),
                 name: item.item_name,
                 detail: `${item.category} • Qty: ${item.count}`,
             }));
 
-            setIngredients(mappedIngredients);
+            setIngredients((prev) => [...prev, ...mappedIngredients]);
             setSelectedImage(null); // ✅ clear image
         } catch (err) {
             setError(err.message || "Something went wrong.");
@@ -115,17 +116,24 @@ export default function recipe_review() {
     };
 
     const handleFileChange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
 
         setError("");
         setLoading(true);
 
-        const previewUrl = URL.createObjectURL(file);
-        setSelectedImage(previewUrl);
+        // Preview URLs
+        const newPreviews = files.map((file) => ({
+            file,
+            url: URL.createObjectURL(file),
+        }));
 
+        // Add to existing images
+        setSelectedImages((prev) => [...prev, ...newPreviews]);
+
+        // 👉 For now: only analyze the FIRST newly uploaded image
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("image", files[0]);
 
         try {
             const response = await fetch("http://localhost:8000/analyze-image", {
@@ -148,12 +156,10 @@ export default function recipe_review() {
             setIngredients(mappedIngredients);
         } catch (err) {
             setError(err.message || "Something went wrong.");
-            setIngredients([]);
         } finally {
             setLoading(false);
         }
     };
-
     return (
         <div className="container">
             <header className="header">
@@ -237,7 +243,7 @@ export default function recipe_review() {
 
                     {mode === "image" && (
                         <>
-                            {!selectedImage ? (
+                            {selectedImages.length === 0 ? (
                                 <div className="uploadBox" onClick={handleUploadClick}>
                                     <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
                                     <p>Click to upload image</p>
@@ -247,7 +253,32 @@ export default function recipe_review() {
                                 </div>
                             ) : (
                                 <>
-                                    <img src={selectedImage} alt="Uploaded ingredient" />
+                                    {/* Show all uploaded images */}
+                                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                                        {selectedImages.map((img, index) => (
+                                            <img
+                                                key={index}
+                                                src={img.url}
+                                                alt="Uploaded"
+                                                style={{ width: "120px", borderRadius: "8px" }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {/* ✅ NEW BUTTON (this is what you wanted) */}
+                                    <button
+                                        onClick={handleUploadClick}
+                                        style={{
+                                            marginTop: "12px",
+                                            padding: "8px 12px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #ccc",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        + Add more images
+                                    </button>
+
                                     {loading && <div className="tag top">Analyzing image...</div>}
                                 </>
                             )}
@@ -255,6 +286,7 @@ export default function recipe_review() {
                             <input
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 ref={fileInputRef}
                                 onChange={handleFileChange}
                                 style={{ display: "none" }}
