@@ -136,7 +136,6 @@ export default function recipe_review() {
             }
 
             const mappedIngredients = (data.inventory || []).map((item, index) => ({
-                id: Date.now().toString() + Math.random(),
                 id: String(index + 1).padStart(2, "0"),
                 name: item.item_name,
                 detail: `${item.category} • Qty: ${item.count}`,
