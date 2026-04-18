@@ -1,6 +1,10 @@
 import React, { useRef, useState } from "react";
 import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
+import { db, auth } from "./firebase";
+import { collection, addDoc } from "firebase/firestore";
+
+const RECIPE_URL = "http://localhost:8000/generate-recipes"; // swap when teammate is ready
 
 export default function recipe_review() {
     const navigate = useNavigate();
@@ -17,7 +21,7 @@ export default function recipe_review() {
 
     const addIngredient = () => {
         const newItem = {
-            id: Date.now().toString(),
+            //id: Date.now().toString(),
             name: "New Ingredient",
             detail: "Edit me",
         };
@@ -33,6 +37,36 @@ export default function recipe_review() {
                 item.id === id ? { ...item, name: newName } : item
             )
         );
+    };
+
+    const handleConfirm = async () => {
+        if (ingredients.length === 0) return;
+        setError("");
+        setLoading(true);
+
+        const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
+
+        try {
+            await addDoc(collection(db, "inventories"), {
+                uid: auth.currentUser?.uid ?? null,
+                items: inventory,
+                createdAt: new Date(),
+            });
+
+            const response = await fetch(RECIPE_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ inventory }),
+            });
+
+            if (!response.ok) throw new Error(`Recipe API error: ${response.status}`);
+            const data = await response.json();
+            navigate("/confirmation", { state: { recipes: data } });
+        } catch (err) {
+            setError("Inventory saved! Recipe generation failed: " + err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleUploadClick = () => {
@@ -180,7 +214,8 @@ export default function recipe_review() {
 
                     <button
                         className="primary"
-                        onClick={() => navigate("/")}
+                        onClick={handleConfirm}
+                        disabled={loading || ingredients.length === 0}
                     >
                         CONFIRM SELECTION →
                     </button>
