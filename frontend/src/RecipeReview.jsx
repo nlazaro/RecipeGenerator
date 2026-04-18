@@ -26,6 +26,8 @@ export default function recipe_review() {
     const [textInput, setTextInput] = useState("");
 
     useEffect(() => {
+
+        if (mode !== "image") return;
         const allIngredients = selectedImages.flatMap(img => img.ingredients || []);
         setIngredients(allIngredients);
     }, [selectedImages]);
@@ -47,9 +49,18 @@ export default function recipe_review() {
         const newName = prompt("Enter new name:");
         if (!newName) return;
 
+        const newQty = prompt("Enter quantity:");
+        if (!newQty) return;
+
         setIngredients((prev) =>
             prev.map((item) =>
-                item.id === id ? { ...item, name: newName } : item
+                item.id === id
+                    ? {
+                        ...item,
+                        name: newName,
+                        detail: `Qty: ${newQty}`, // or keep category if needed
+                    }
+                    : item
             )
         );
     };
@@ -121,7 +132,7 @@ export default function recipe_review() {
             }));
 
             setIngredients((prev) => [...prev, ...mappedIngredients]);
-            setSelectedImage(null); // ✅ clear image
+            setSelectedImages([]);  // ✅ clear image
         } catch (err) {
             setError(err.message || "Something went wrong.");
             setIngredients([]);
@@ -225,7 +236,7 @@ export default function recipe_review() {
                     <button
                         onClick={() => {
                             setMode("text");
-                            setSelectedImage(null);
+                            setSelectedImages([]);
                         }}
                         style={{
                             padding: "8px 16px",
