@@ -1,152 +1,143 @@
-import React from "react";
-import "./Confirmation.css";
-
-const ingredientsLeft = [
-    "2 Fresh Pacific Cod Fillets (6oz)",
-    "2 tbsp Cold-Pressed Olive Oil",
-    "Zest of 1 Sicilian Lemon",
-];
-
-const ingredientsRight = [
-    "1 Large Organic Fennel Bulb",
-    "Smoked Paprika & Sea Salt",
-    "Micro-cilantro for garnish",
-];
-
-const instructions = [
-    {
-        number: "01",
-        title: "PREPARATION",
-        text: "Pat the cod fillets dry with linen towels. This is critical for achieving a crisp blackened exterior. Thinly shave the fennel bulb using a mandoline, reserving the fronds for garnish.",
-    },
-    {
-        number: "02",
-        title: "THE SEARING",
-        text: "Heat a heavy cast-iron skillet over medium-high heat until it begins to smoke slightly. Add the olive oil and sear the spiced cod for 4 minutes per side without moving them to develop a crust.",
-    },
-    {
-        number: "03",
-        title: "FINISHING",
-        text: "Toss the shaved fennel with lemon juice and a touch of sea salt. Plate the cod atop the fennel salad and garnish with micro-cilantro and fennel fronds.",
-    },
-];
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import "./confirmation.css";
 
 export default function Confirmation() {
-    return (
-        <div className="recipe-page">
-            <nav className="topbar">
-                <div className="brand">RECIPE.AI</div>
+    const location = useLocation();
+    const navigate = useNavigate();
+    const recipeList = location.state?.recipes?.recipes || [];
+    const [selected, setSelected] = useState(null);
 
-                <div className="nav-right">
-                    <a href="/">EXPLORE</a>
-                    <a href="/" className="active">
-                        RECIPES
-                    </a>
-                    <a href="/">SAVED</a>
-                    <span className="icon">↻</span>
-                    <span className="icon">⚙</span>
-                    <div className="avatar">J</div>
+    if (!recipeList.length) {
+        return (
+            <div className="recipe-page">
+                <nav className="topbar">
+                    <div className="brand">RECIPEGEN</div>
+                </nav>
+                <div style={{ padding: "48px", textAlign: "center" }}>
+                    <p style={{ color: "#888", marginBottom: "24px" }}>No recipes found.</p>
+                    <button className="btn btn-dark" style={{ width: "auto", padding: "16px 32px" }} onClick={() => navigate("/review")}>
+                        ← GO BACK
+                    </button>
                 </div>
-            </nav>
+            </div>
+        );
+    }
 
-            <main className="hero-grid">
-                <section className="hero-left">
-                    <div className="label">SIGNATURE DISH</div>
+    if (selected !== null) {
+        const recipe = recipeList[selected];
+        const half = Math.ceil(recipe.ingredients.length / 2);
+        const leftIngredients = recipe.ingredients.slice(0, half);
+        const rightIngredients = recipe.ingredients.slice(half);
 
-                    <h1 className="recipe-title">
-                        BLACKENED
-                        <br />
-                        COD &amp; FENNEL
-                    </h1>
+        return (
+            <div className="recipe-page">
+                <nav className="topbar">
+                    <div className="brand">RECIPEGEN</div>
+                    <div className="nav-right">
+                        <button className="back-btn" onClick={() => setSelected(null)}>← ALL RECIPES</button>
+                    </div>
+                </nav>
 
-                    <div className="hero-image-wrap">
-                        <img
-                            className="hero-image"
-                            src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=80"
-                            alt="Blackened cod plated with fennel"
-                        />
+                <main className="hero-grid">
+                    <section className="hero-left">
+                        <div className="label">AI GENERATED RECIPE</div>
+                        <h1 className="recipe-title">{recipe.title.toUpperCase()}</h1>
+                        <p className="recipe-description">{recipe.description}</p>
+                    </section>
+
+                    <aside className="recipe-sidebar">
+                        <div className="meta-block">
+                            <div className="meta-row">
+                                <span>PREP TIME</span>
+                                <strong>{recipe.prep_time.toUpperCase()}</strong>
+                            </div>
+                            <div className="meta-row">
+                                <span>COOK TIME</span>
+                                <strong>{recipe.cook_time.toUpperCase()}</strong>
+                            </div>
+                            <div className="meta-row">
+                                <span>SERVINGS</span>
+                                <strong>{String(recipe.servings).padStart(2, "0")}</strong>
+                            </div>
+                        </div>
+
+                        <div className="sidebar-buttons">
+                            <button className="btn btn-dark">SAVE TO COLLECTION</button>
+                            <button className="btn btn-light" onClick={() => navigate("/review")}>START OVER</button>
+                        </div>
+                    </aside>
+                </main>
+
+                <section className="ingredients-section">
+                    <h2>
+                        <span className="section-number">01</span> INGREDIENTS
+                    </h2>
+                    <div className="ingredients-grid">
+                        <ul>
+                            {leftIngredients.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                        <ul>
+                            {rightIngredients.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
                     </div>
                 </section>
 
-                <aside className="recipe-sidebar">
-                    <div className="meta-block">
-                        <div className="meta-row">
-                            <span>PREP TIME</span>
-                            <strong>15 MIN</strong>
-                        </div>
-                        <div className="meta-row">
-                            <span>COOK TIME</span>
-                            <strong>10 MIN</strong>
-                        </div>
-                        <div className="meta-row">
-                            <span>SERVINGS</span>
-                            <strong>02</strong>
-                        </div>
-                        <div className="meta-row">
-                            <span>DIFFICULTY</span>
-                            <strong>MODERATE</strong>
-                        </div>
-                    </div>
-
-                    <div className="sidebar-buttons">
-                        <button className="btn btn-dark">SAVE TO COLLECTION</button>
-                        <button className="btn btn-light">EXPORT PDF</button>
-                    </div>
-
-                    <div className="nutrition">
-                        <h4>NUTRITIONAL DATA</h4>
-                        <div className="nutrition-grid">
-                            <div className="nutrition-card">
-                                <span>CALORIES</span>
-                                <strong>320</strong>
+                <section className="instructions-section">
+                    <h2>
+                        <span className="section-number">02</span> INSTRUCTIONS
+                    </h2>
+                    <div className="instructions-list">
+                        {recipe.steps.map((step, i) => (
+                            <div className="instruction-item" key={i}>
+                                <div className="instruction-number">{String(i + 1).padStart(2, "0")}</div>
+                                <div className="instruction-content">
+                                    <p>{step}</p>
+                                </div>
                             </div>
-                            <div className="nutrition-card">
-                                <span>PROTEIN</span>
-                                <strong>42g</strong>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-            </main>
-
-            <section className="ingredients-section">
-                <h2>
-                    <span className="section-number">01</span> INGREDIENTS
-                </h2>
-
-                <div className="ingredients-grid">
-                    <ul>
-                        {ingredientsLeft.map((item) => (
-                            <li key={item}>{item}</li>
                         ))}
-                    </ul>
+                    </div>
+                </section>
+            </div>
+        );
+    }
 
-                    <ul>
-                        {ingredientsRight.map((item) => (
-                            <li key={item}>{item}</li>
-                        ))}
-                    </ul>
+    return (
+        <div className="recipe-page">
+            <nav className="topbar">
+                <div className="brand">RECIPEGEN</div>
+                <div className="nav-right">
+                    <button className="back-btn" onClick={() => navigate("/review")}>← BACK</button>
                 </div>
-            </section>
+            </nav>
 
-            <section className="instructions-section">
-                <h2>
-                    <span className="section-number">02</span> INSTRUCTIONS
-                </h2>
+            <header className="selection-header">
+                <div className="label">AI GENERATED</div>
+                <h1 className="recipe-title">YOUR RECIPES</h1>
+                <p className="selection-subtitle">Select a recipe to view the full instructions.</p>
+            </header>
 
-                <div className="instructions-list">
-                    {instructions.map((step) => (
-                        <div className="instruction-item" key={step.number}>
-                            <div className="instruction-number">{step.number}</div>
-
-                            <div className="instruction-content">
-                                <h3>{step.title}</h3>
-                                <p>{step.text}</p>
+            <div className="recipe-cards">
+                {recipeList.map((recipe, i) => (
+                    <div className="recipe-card" key={i} onClick={() => setSelected(i)}>
+                        <div className="card-number">{String(i + 1).padStart(2, "0")}</div>
+                        <div className="card-body">
+                            <h2 className="card-title">{recipe.title}</h2>
+                            <p className="card-desc">{recipe.description}</p>
+                            <div className="card-meta">
+                                <span>PREP {recipe.prep_time.toUpperCase()}</span>
+                                <span>COOK {recipe.cook_time.toUpperCase()}</span>
+                                <span>{recipe.servings} SERVINGS</span>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </section>
+                        <div className="card-arrow">→</div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
