@@ -1,6 +1,15 @@
+from dotenv import load_dotenv
+from groq import Groq
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, HTTPException, UploadFile
 import base64
 import json
 import os
+from pydantic import BaseModel
+
+
+class TextRequest(BaseModel):
+    text: str
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -31,18 +40,10 @@ Rules:
 1. You MUST output strictly in JSON format. Do not include conversational filler like "Here is the JSON."
 2. The JSON must contain a single key called "inventory", which is a list of objects.
 3. Each object must have exactly three keys:
-   - "item_name" (string): The specific name of the food item. Be descriptive (e.g., "Banana" and "Greek Yogurt" instead of just "Yogurt" ).
-   - "category" (string): Must be strictly categorized as one of the following: [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other].
-   - "count" (integer): The estimated visual quantity. If the item is in a container (like a jar of sauce or a carton of eggs), count the container as 1 unless individual items are clearly visible.
-
-Example Output Format:
-{
-  "inventory": [
-    {"item_name": "Granny Smith Apple", "category": "Produce", "count": 3},
-    {"item_name": "Almond Milk", "category": "Dairy", "count": 1},
-    {"item_name": "Chicken Breast", "category": "Protein", "count": 2}
-  ]
-}"""
+   - "item_name" (string)
+   - "category" (string): [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other]
+   - "count" (integer)
+"""
 
 RECIPE_PROMPT = """You are a creative chef AI. Given a list of available ingredients, generate 3 diverse recipe suggestions.
 
@@ -127,14 +128,17 @@ async def generate_recipes(body: RecipeRequest):
     return result
 
 
+# ✅ IMAGE ENDPOINT (unchanged)
 @app.post("/analyze-image")
 async def analyze_image(image: UploadFile = File(...)):
     if not image.content_type or not image.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
+        raise HTTPException(
+            status_code=400, detail="Uploaded file must be an image.")
 
     image_bytes = await image.read()
     if not image_bytes:
-        raise HTTPException(status_code=400, detail="Uploaded image file is empty.")
+        raise HTTPException(
+            status_code=400, detail="Uploaded image file is empty.")
 
     mime_type = image.content_type or "image/jpeg"
     b64_image = base64.b64encode(image_bytes).decode("utf-8")
@@ -149,28 +153,63 @@ async def analyze_image(image: UploadFile = File(...)):
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": data_url},
-                        },
-                        {
-                            "type": "text",
-                            "text": "Analyze this image and return the food inventory as JSON.",
-                        },
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                        {"type": "text", "text": "Analyze this image and return the food inventory as JSON."},
                     ],
                 },
             ],
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Groq API error: {str(e)}")
 
     raw_content = response.choices[0].message.content
     try:
         result = json.loads(raw_content)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Model returned non-JSON response.")
+        raise HTTPException(
+            status_code=500, detail="Model returned non-JSON response.")
 
     if "inventory" not in result:
-        raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
+        raise HTTPException(
+            status_code=500, detail="Model response missing 'inventory' key.")
+
+    return result
+
+
+# ✅ NEW TEXT ENDPOINT
+@app.post("/analyze-text")
+async def analyze_text(payload: TextRequest):
+    text = payload.text
+    if not text.strip():
+        raise HTTPException(
+            status_code=400, detail="Text input cannot be empty.")
+
+    try:
+        response = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": f"Convert this food list into structured inventory JSON: {text}",
+                },
+            ],
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Groq API error: {str(e)}")
+
+    raw_content = response.choices[0].message.content
+    try:
+        result = json.loads(raw_content)
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=500, detail="Model returned non-JSON response.")
+
+    if "inventory" not in result:
+        raise HTTPException(
+            status_code=500, detail="Model response missing 'inventory' key.")
 
     return result
