@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { db, auth } from './firebase'
 import { collection, addDoc } from 'firebase/firestore'
 
-const API_URL = 'http://localhost:8000/analyze-image'
+const ANALYZE_URL = 'http://localhost:8000/analyze-image'
+const RECIPE_URL = 'http://localhost:8000/generate-recipes' // swap when teammate is ready
+
+const CATEGORIES = ['Produce', 'Dairy', 'Protein', 'Pantry', 'Beverage', 'Snack', 'Other']
 
 export default function ImageUpload() {
   const [image, setImage] = useState(null)
@@ -27,10 +30,8 @@ export default function ImageUpload() {
     try {
       const formData = new FormData()
       formData.append('image', image)
-
-      const response = await fetch(API_URL, { method: 'POST', body: formData })
+      const response = await fetch(ANALYZE_URL, { method: 'POST', body: formData })
       if (!response.ok) throw new Error(`API error: ${response.status}`)
-
       const data = await response.json()
       setInventory(data.inventory)
     } catch (err) {
@@ -40,15 +41,42 @@ export default function ImageUpload() {
     }
   }
 
-  async function handleSaveToFirestore() {
-    if (!inventory) return
+  function handleItemChange(index, field, value) {
+    setInventory(prev => prev.map((item, i) =>
+      i === index ? { ...item, [field]: field === 'count' ? parseInt(value) || 1 : value } : item
+    ))
+  }
+
+  function handleRemoveItem(index) {
+    setInventory(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function handleAddItem() {
+    setInventory(prev => [...prev, { item_name: '', category: 'Other', count: 1 }])
+  }
+
+  async function handleConfirm() {
+    if (!inventory || inventory.length === 0) return
     const user = auth.currentUser
+
     await addDoc(collection(db, 'inventories'), {
       uid: user?.uid ?? null,
       items: inventory,
       createdAt: new Date()
     })
-    alert('Inventory saved!')
+
+    try {
+      const response = await fetch(RECIPE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inventory })
+      })
+      if (!response.ok) throw new Error(`Recipe API error: ${response.status}`)
+      const data = await response.json()
+      alert('Recipes generated!\n\n' + JSON.stringify(data, null, 2))
+    } catch (err) {
+      alert('Inventory saved! Recipe generation failed: ' + err.message)
+    }
   }
 
   return (
@@ -58,13 +86,11 @@ export default function ImageUpload() {
       <input type="file" accept="image/*" onChange={handleFileChange} />
 
       {preview && (
-        <div>
-          <img src={preview} alt="Preview" style={{ maxWidth: 300, marginTop: 12 }} />
-        </div>
+        <img src={preview} alt="Preview" style={{ maxWidth: 300, marginTop: 12, display: 'block' }} />
       )}
 
       {image && (
-        <button onClick={handleAnalyze} disabled={loading}>
+        <button onClick={handleAnalyze} disabled={loading} style={{ marginTop: 8 }}>
           {loading ? 'Analyzing...' : 'Analyze Image'}
         </button>
       )}
@@ -73,17 +99,56 @@ export default function ImageUpload() {
 
       {inventory && (
         <div>
-          <h3>Detected Items</h3>
-          <ul>
-            {inventory.map((item, i) => (
-              <li key={i}>
-                {item.item_name} — {item.category} (x{item.count})
-              </li>
-            ))}
-          </ul>
-          <button onClick={handleSaveToFirestore}>Save to Firestore</button>
-          <button onClick={() => alert('Recipe generation coming soon!')}>
-            Generate Recipes
+          <h3>Review Detected Items</h3>
+          <p>Edit, remove, or add items before confirming.</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Count</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {inventory.map((item, i) => (
+                <tr key={i}>
+                  <td>
+                    <input
+                      value={item.item_name}
+                      onChange={e => handleItemChange(i, 'item_name', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={item.category}
+                      onChange={e => handleItemChange(i, 'category', e.target.value)}
+                    >
+                      {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.count}
+                      onChange={e => handleItemChange(i, 'count', e.target.value)}
+                      style={{ width: 60 }}
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => handleRemoveItem(i)}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <button onClick={handleAddItem} style={{ marginTop: 8 }}>+ Add Item</button>
+          <br />
+          <button onClick={handleConfirm} style={{ marginTop: 8 }}>
+            Confirm & Generate Recipes
           </button>
         </div>
       )}
