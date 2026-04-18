@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { db, auth } from './firebase'
 import { collection, addDoc } from 'firebase/firestore'
 
@@ -8,6 +9,7 @@ const RECIPE_URL = 'http://localhost:8000/generate-recipes' // swap when teammat
 const CATEGORIES = ['Produce', 'Dairy', 'Protein', 'Pantry', 'Beverage', 'Snack', 'Other']
 
 export default function ImageUpload() {
+  const navigate = useNavigate()
   const [image, setImage] = useState(null)
   const [preview, setPreview] = useState(null)
   const [inventory, setInventory] = useState(null)
@@ -81,6 +83,7 @@ export default function ImageUpload() {
 
   return (
     <div>
+      <button onClick={() => navigate('/')} style={{ marginBottom: 16 }}>← Back</button>
       <h2>Scan Your Food</h2>
 
       <input type="file" accept="image/*" onChange={handleFileChange} />

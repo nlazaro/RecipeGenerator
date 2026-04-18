@@ -3,6 +3,8 @@ import pokeImg from './assets/poke.png'
 import tuscanImg from './assets/tuscan-pasta.jpg'
 import './App.css'
 import { useNavigate } from 'react-router-dom'
+import { auth } from './firebase'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 
 
 
@@ -20,10 +22,16 @@ function scrollTo(id) {
     })
 }
 
-function Landing({ onNavigate }) {
+function Landing() {
     const navigate = useNavigate()
     const [showSecondNav, setShowSecondNav] = useState(false)
     const [activeSection, setActiveSection] = useState('recipe-scan')
+    const [user, setUser] = useState(null)
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, setUser)
+        return unsubscribe
+    }, [])
 
     useEffect(() => {
         const onScroll = () => setShowSecondNav(window.scrollY > 120)
@@ -59,9 +67,13 @@ function Landing({ onNavigate }) {
                         <span className="logo-leaf">🌿</span>
                         <span>RecipeGen</span>
                     </div>
-                    <button className="nav-user-btn" onClick={() => onNavigate('signin')}>
-                        <span>👤</span>
-                    </button>
+                    {user ? (
+                        <button className="nav-user-btn" onClick={() => signOut(auth)}>Sign Out</button>
+                    ) : (
+                        <button className="nav-user-btn" onClick={() => navigate('/signin')}>
+                            <span>👤</span>
+                        </button>
+                    )}
                 </div>
             </nav>
 
@@ -110,7 +122,7 @@ function Landing({ onNavigate }) {
 
                     <button
                         className="btn-primary-hero"
-                        onClick={() => navigate('/review')}
+                        onClick={() => auth.currentUser ? navigate('/scan') : navigate('/signin')}
                     >
                         Start Your Recipe
                     </button>
@@ -613,7 +625,7 @@ function Landing({ onNavigate }) {
                             </div>
 
                             <div className="db-cta">
-                                <button className="btn-primary-hero" onClick={() => onNavigate('profile')}>
+                                <button className="btn-primary-hero" onClick={() => navigate('/profile')}>
                                     Configure Your Profile
                                 </button>
                             </div>
