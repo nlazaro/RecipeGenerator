@@ -586,14 +586,32 @@ function App() {
 
       {/* Footer */}
       <footer className="footer">
-        <div className="footer-wrap">
-          <strong>RecipeGen</strong>
-          <div className="footer-links">
-            <a href="#">Contact Us</a>
-            <a href="#">Terms</a>
-            <a href="#">Privacy Policy</a>
+        <div className="footer-inner">
+
+          <div className="footer-top">
+            <div className="footer-brand">
+              <span className="footer-leaf">🌿</span>
+              <span>RecipeGen</span>
+            </div>
+            <nav className="footer-nav">
+              <a href="#">How It Works</a>
+              <a href="#">AI Recipes</a>
+              <a href="#">Nutrition</a>
+              <a href="#">Contact Us</a>
+            </nav>
           </div>
-          <span>© 2024. All rights reserved.</span>
+
+          <div className="footer-divider" />
+
+          <div className="footer-bottom">
+            <span className="footer-copy">© 2026 RecipeGen. All rights reserved.</span>
+            <div className="footer-legal">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+            </div>
+            <div className="footer-made">Built with 🌿 for demo day</div>
+          </div>
+
         </div>
       </footer>
 
