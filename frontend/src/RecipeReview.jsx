@@ -54,6 +54,8 @@ export default function recipe_review() {
         );
     };
 
+    const maxReached = selectedImages.length >= 9;
+
     const handleConfirm = async () => {
         if (ingredients.length === 0) return;
         setError("");
@@ -143,7 +145,10 @@ export default function recipe_review() {
         }));
 
         // Add to existing images
-        setSelectedImages((prev) => [...prev, ...newPreviews]);
+        setSelectedImages((prev) => {
+            const combined = [...prev, ...newPreviews];
+            return combined.slice(0, 9); // ✅ limit to 9 images
+        });
 
         // 👉 For now: only analyze the FIRST newly uploaded image
         const formData = new FormData();
@@ -316,6 +321,7 @@ export default function recipe_review() {
 
                                     {/* ✅ NEW BUTTON (this is what you wanted) */}
                                     <button
+                                        disabled={maxReached}
                                         onClick={handleUploadClick}
                                         style={{
                                             marginTop: "12px",
