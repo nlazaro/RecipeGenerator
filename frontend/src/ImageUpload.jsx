@@ -7,7 +7,7 @@ const RECIPE_URL = 'http://localhost:8000/generate-recipes' // swap when teammat
 
 const CATEGORIES = ['Produce', 'Dairy', 'Protein', 'Pantry', 'Beverage', 'Snack', 'Other']
 
-export default function ImageUpload() {
+export default function ImageUpload({ onNavigate }) {
   const [image, setImage] = useState(null)
   const [preview, setPreview] = useState(null)
   const [inventory, setInventory] = useState(null)
@@ -81,6 +81,7 @@ export default function ImageUpload() {
 
   return (
     <div>
+      <button onClick={() => onNavigate('landing')} style={{ marginBottom: 16 }}>← Back</button>
       <h2>Scan Your Food</h2>
 
       <input type="file" accept="image/*" onChange={handleFileChange} />

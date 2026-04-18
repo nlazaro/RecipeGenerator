@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import SignIn from './SignIn'
 import ProfileSetup from './ProfileSetup'
+import ImageUpload from './ImageUpload'
+import { auth } from './firebase'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 import pokeImg from './assets/poke.png'
+import logoutIcon from './assets/logout-icon.jpg'
 import tuscanImg from './assets/tuscan-pasta.jpg'
 import './App.css'
 
@@ -20,6 +24,12 @@ function App() {
   const [page, setPage] = useState('landing')
   const [showSecondNav, setShowSecondNav] = useState(false)
   const [activeSection, setActiveSection] = useState('recipe-scan')
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, setUser)
+    return unsubscribe
+  }, [])
 
   /* Show second nav after scrolling past the hero */
   useEffect(() => {
@@ -46,6 +56,7 @@ function App() {
 
   if (page === 'signin') return <SignIn onNavigate={setPage} />
   if (page === 'profile') return <ProfileSetup onNavigate={setPage} />
+  if (page === 'scan') return <ImageUpload onNavigate={setPage} />
 
   return (
     <div className="landing">
@@ -57,9 +68,15 @@ function App() {
             <span className="logo-leaf">🌿</span>
             <span>RecipeGen</span>
           </div>
-          <button className="nav-user-btn" onClick={() => setPage('signin')}>
-            <span>👤</span>
-          </button>
+          {user ? (
+            <button className="nav-user-btn" onClick={() => signOut(auth)}>
+              <img src={logoutIcon} alt="Sign out" width={24} height={24} />
+            </button>
+          ) : (
+            <button className="nav-user-btn" onClick={() => setPage('signin')}>
+              <span>👤</span>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -107,7 +124,7 @@ function App() {
             />
           </div>
 
-          <button className="btn-primary-hero">Start Your Recipe</button>
+          <button className="btn-primary-hero" onClick={() => auth.currentUser ? setPage('scan') : setPage('signin')}>Start Your Recipe</button>
           <a href="#how-it-works" className="how-link">How It Works</a>
         </div>
       </section>
