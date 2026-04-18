@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './ProfileSetup.css'
+import { db, auth } from './firebase'
+import { doc, setDoc } from 'firebase/firestore'
 
 /* ── Data ─────────────────────────────────────────────────── */
 
@@ -110,6 +112,7 @@ function SummaryChip({ label, variant }) {
 function ProfileSetup() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
+  const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState({
     name: '',
     age: '',
@@ -533,9 +536,36 @@ function ProfileSetup() {
 
             <button
               className="ps-cta-btn"
-              onClick={() => navigate('/')}
+              disabled={saving}
+              onClick={async () => {
+                const uid = auth.currentUser?.uid
+                if (uid) {
+                  setSaving(true)
+                  await setDoc(doc(db, 'users', uid), {
+                    name: profile.name,
+                    age: profile.age,
+                    sex: profile.sex,
+                    heightFt: profile.heightFt,
+                    heightIn: profile.heightIn,
+                    weightLbs: profile.weightLbs,
+                    goals: profile.goals,
+                    dietary: profile.dietary,
+                    dietaryStyles: profile.dietaryStyles,
+                    allergies: profile.allergies,
+                    cookTime: profile.cookTime,
+                    adventurousness: profile.adventurousness,
+                    cookingFor: profile.cookingFor,
+                    skillLevel: profile.skillLevel,
+                    medications: profile.medications,
+                    additionalNotes: profile.additionalNotes,
+                    profileCompletedAt: new Date(),
+                  }, { merge: true })
+                  setSaving(false)
+                }
+                navigate('/')
+              }}
             >
-              Start Cooking →
+              {saving ? 'Saving...' : 'Start Cooking →'}
             </button>
           </div>
         )
