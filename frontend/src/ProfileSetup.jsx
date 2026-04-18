@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './ProfileSetup.css'
+import { db, auth } from './firebase'
+import { doc, setDoc } from 'firebase/firestore'
 
 /* ── Data ─────────────────────────────────────────────────── */
 
@@ -80,8 +83,10 @@ function SummaryChip({ label, variant }) {
 
 /* ── Main component ───────────────────────────────────────── */
 
-function ProfileSetup({ onNavigate }) {
+function ProfileSetup() {
+  const navigate = useNavigate()
   const [step, setStep] = useState(1)
+  const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState({
     name: '',
     goals: [],
@@ -316,9 +321,27 @@ function ProfileSetup({ onNavigate }) {
 
             <button
               className="ps-cta-btn"
-              onClick={() => onNavigate('landing')}
+              disabled={saving}
+              onClick={async () => {
+                const uid = auth.currentUser?.uid
+                if (uid) {
+                  setSaving(true)
+                  await setDoc(doc(db, 'users', uid), {
+                    name: profile.name,
+                    goals: profile.goals,
+                    dietary: profile.dietary,
+                    allergies: profile.allergies,
+                    cookTime: profile.cookTime,
+                    adventurousness: profile.adventurousness,
+                    cookingFor: profile.cookingFor,
+                    profileCompletedAt: new Date(),
+                  }, { merge: true })
+                  setSaving(false)
+                }
+                navigate('/')
+              }}
             >
-              Start Cooking →
+              {saving ? 'Saving...' : 'Start Cooking →'}
             </button>
           </div>
         )
@@ -336,7 +359,7 @@ function ProfileSetup({ onNavigate }) {
 
       <main className="ps-main">
         {/* Brand */}
-        <div className="ps-brand" onClick={() => onNavigate('landing')}>
+        <div className="ps-brand" onClick={() => navigate('/')}>
           <span>🌿</span>
           <span>RecipeGen</span>
         </div>

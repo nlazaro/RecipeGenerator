@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes"; // swap when teammate is ready
 
@@ -46,12 +46,15 @@ export default function recipe_review() {
 
         const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
 
+        const uid = auth.currentUser?.uid;
+
         try {
-            await addDoc(collection(db, "inventories"), {
-                uid: auth.currentUser?.uid ?? null,
-                items: inventory,
-                createdAt: new Date(),
-            });
+            if (uid) {
+                await setDoc(doc(db, "users", uid), {
+                    inventory,
+                    inventoryUpdatedAt: new Date(),
+                }, { merge: true });
+            }
 
             const response = await fetch(RECIPE_URL, {
                 method: "POST",
@@ -61,6 +64,15 @@ export default function recipe_review() {
 
             if (!response.ok) throw new Error(`Recipe API error: ${response.status}`);
             const data = await response.json();
+
+            if (uid) {
+                await addDoc(collection(db, "users", uid, "recipes"), {
+                    recipes: data,
+                    inventoryUsed: inventory,
+                    createdAt: new Date(),
+                });
+            }
+
             navigate("/confirmation", { state: { recipes: data } });
         } catch (err) {
             setError("Inventory saved! Recipe generation failed: " + err.message);

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db, auth } from './firebase'
-import { collection, addDoc } from 'firebase/firestore'
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore'
 
 const ANALYZE_URL = 'http://localhost:8000/analyze-image'
 const RECIPE_URL = 'http://localhost:8000/generate-recipes' // swap when teammate is ready
@@ -59,13 +59,14 @@ export default function ImageUpload() {
 
   async function handleConfirm() {
     if (!inventory || inventory.length === 0) return
-    const user = auth.currentUser
+    const uid = auth.currentUser?.uid
 
-    await addDoc(collection(db, 'inventories'), {
-      uid: user?.uid ?? null,
-      items: inventory,
-      createdAt: new Date()
-    })
+    if (uid) {
+      await setDoc(doc(db, 'users', uid), {
+        inventory,
+        inventoryUpdatedAt: new Date(),
+      }, { merge: true })
+    }
 
     try {
       const response = await fetch(RECIPE_URL, {
@@ -75,6 +76,15 @@ export default function ImageUpload() {
       })
       if (!response.ok) throw new Error(`Recipe API error: ${response.status}`)
       const data = await response.json()
+
+      if (uid) {
+        await addDoc(collection(db, 'users', uid, 'recipes'), {
+          recipes: data,
+          inventoryUsed: inventory,
+          createdAt: new Date(),
+        })
+      }
+
       alert('Recipes generated!\n\n' + JSON.stringify(data, null, 2))
     } catch (err) {
       alert('Inventory saved! Recipe generation failed: ' + err.message)
