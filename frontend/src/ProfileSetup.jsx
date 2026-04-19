@@ -562,7 +562,7 @@ function ProfileSetup() {
                   }, { merge: true })
                   setSaving(false)
                 }
-                navigate('/')
+                navigate('/dashboard')
               }}
             >
               {saving ? 'Saving...' : 'Start Cooking →'}

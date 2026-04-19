@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import Navbar from "./Navbar";
+import { collection, getDocs, orderBy, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import AppNav from "./AppNav";
 import "./RecipeCollection.css";
+
+const IMAGE_BASE = "http://localhost:8000/recipe-image";
 
 export default function RecipeCollection() {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selected, setSelected] = useState(null);
+    const [tab, setTab] = useState("all");
+    const [recipeImage, setRecipeImage] = useState(null);
+    const [hoverRating, setHoverRating] = useState(0);
     const navigate = useNavigate();
 
     useEffect(() => {
