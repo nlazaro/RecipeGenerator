@@ -31,18 +31,10 @@ Rules:
 1. You MUST output strictly in JSON format. Do not include conversational filler like "Here is the JSON."
 2. The JSON must contain a single key called "inventory", which is a list of objects.
 3. Each object must have exactly three keys:
-   - "item_name" (string): The specific name of the food item. Be descriptive (e.g., "Banana" and "Greek Yogurt" instead of just "Yogurt" ).
-   - "category" (string): Must be strictly categorized as one of the following: [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other].
-   - "count" (integer): The estimated visual quantity. If the item is in a container (like a jar of sauce or a carton of eggs), count the container as 1 unless individual items are clearly visible.
-
-Example Output Format:
-{
-  "inventory": [
-    {"item_name": "Granny Smith Apple", "category": "Produce", "count": 3},
-    {"item_name": "Almond Milk", "category": "Dairy", "count": 1},
-    {"item_name": "Chicken Breast", "category": "Protein", "count": 2}
-  ]
-}"""
+   - "item_name" (string)
+   - "category" (string): [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other]
+   - "count" (integer)
+"""
 
 RECIPE_PROMPT = """You are a creative chef AI. Given a list of available ingredients, generate 3 diverse recipe suggestions.
 
@@ -85,6 +77,12 @@ class InventoryItem(BaseModel):
 
 class RecipeRequest(BaseModel):
     inventory: list[InventoryItem]
+    liked_recipes: list[str] = []
+    disliked_recipes: list[str] = []
+
+
+class TextRequest(BaseModel):
+    text: str
 
 
 @app.post("/generate-recipes")
@@ -96,6 +94,14 @@ async def generate_recipes(body: RecipeRequest):
         f"- {item.item_name} (x{item.count})" for item in body.inventory
     )
     prompt = f"{RECIPE_PROMPT}\n\nAvailable ingredients:\n{item_list}"
+
+    if body.liked_recipes:
+        liked = "\n".join(f"- {t}" for t in body.liked_recipes)
+        prompt += f"\n\nThe user has enjoyed these recipes before — suggest something in a similar style:\n{liked}"
+
+    if body.disliked_recipes:
+        disliked = "\n".join(f"- {t}" for t in body.disliked_recipes)
+        prompt += f"\n\nThe user did NOT enjoy these recipes — avoid suggesting anything similar:\n{disliked}"
 
     try:
         response = client.chat.completions.create(
@@ -139,15 +145,41 @@ async def analyze_image(image: UploadFile = File(...)):
                 {
                     "role": "user",
                     "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": data_url},
-                        },
-                        {
-                            "type": "text",
-                            "text": "Analyze this image and return the food inventory as JSON.",
-                        },
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                        {"type": "text", "text": "Analyze this image and return the food inventory as JSON."},
                     ],
+                },
+            ],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
+
+    raw_content = response.choices[0].message.content
+    try:
+        result = json.loads(raw_content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Model returned non-JSON response.")
+
+    if "inventory" not in result:
+        raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
+
+    return result
+
+
+@app.post("/analyze-text")
+async def analyze_text(payload: TextRequest):
+    if not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+
+    try:
+        response = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": INVENTORY_PROMPT},
+                {
+                    "role": "user",
+                    "content": f"Convert this food list into structured inventory JSON: {payload.text}",
                 },
             ],
         )
