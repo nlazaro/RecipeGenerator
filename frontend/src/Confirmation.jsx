@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
 import "./confirmation.css";
+import Navbar from "./Navbar";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
@@ -86,17 +87,20 @@ export default function Confirmation() {
 
     if (!recipeList.length) {
         return (
-            <div className="recipe-page">
-                <nav className="topbar">
-                    <div className="brand">RECIPEGEN</div>
-                </nav>
-                <div style={{ padding: "48px", textAlign: "center" }}>
-                    <p style={{ color: "#888", marginBottom: "24px" }}>No recipes found.</p>
-                    <button className="btn btn-dark" style={{ width: "auto", padding: "16px 32px" }} onClick={() => navigate("/review")}>
-                        ← GO BACK
-                    </button>
+            <>
+                <Navbar />
+                <div className="recipe-page">
+                    <nav className="topbar">
+                        <div className="brand">RECIPEGEN</div>
+                    </nav>
+                    <div style={{ padding: "48px", textAlign: "center" }}>
+                        <p style={{ color: "#888", marginBottom: "24px" }}>No recipes found.</p>
+                        <button className="btn btn-dark" style={{ width: "auto", padding: "16px 32px" }} onClick={() => navigate("/review")}>
+                            ← GO BACK
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
@@ -107,168 +111,174 @@ export default function Confirmation() {
         const rightIngredients = recipe.ingredients.slice(half);
 
         return (
-            <div className="recipe-page">
-                <nav className="topbar">
-                    <div className="brand">RECIPEGEN</div>
-                    <div className="nav-right">
-                        <button className="back-btn" onClick={() => setSelected(null)}>← ALL RECIPES</button>
-                    </div>
-                </nav>
-
-                <main className="hero-grid">
-                    <section className="hero-left">
-                        <div className="label">AI GENERATED RECIPE</div>
-                        <h1 className="recipe-title">{recipe.title.toUpperCase()}</h1>
-                        <p className="recipe-description">{recipe.description}</p>
-                    </section>
-
-                    <aside className="recipe-sidebar">
-                        <div className="meta-block">
-                            <div className="meta-row">
-                                <span>PREP TIME</span>
-                                <strong>{recipe.prep_time.toUpperCase()}</strong>
-                            </div>
-                            <div className="meta-row">
-                                <span>COOK TIME</span>
-                                <strong>{recipe.cook_time.toUpperCase()}</strong>
-                            </div>
-                            <div className="meta-row">
-                                <span>SERVINGS</span>
-                                <strong>{String(recipe.servings).padStart(2, "0")}</strong>
-                            </div>
+            <>
+                <Navbar />
+                <div className="recipe-page">
+                    <nav className="topbar">
+                        <div className="brand">RECIPEGEN</div>
+                        <div className="nav-right">
+                            <button className="back-btn" onClick={() => setSelected(null)}>← ALL RECIPES</button>
                         </div>
+                    </nav>
 
-                        {/* Favorite + Rating */}
-                        <div className="save-block">
-                            <div className="favorite-row">
+                    <main className="hero-grid">
+                        <section className="hero-left">
+                            <div className="label">AI GENERATED RECIPE</div>
+                            <h1 className="recipe-title">{recipe.title.toUpperCase()}</h1>
+                            <p className="recipe-description">{recipe.description}</p>
+                        </section>
+
+                        <aside className="recipe-sidebar">
+                            <div className="meta-block">
+                                <div className="meta-row">
+                                    <span>PREP TIME</span>
+                                    <strong>{recipe.prep_time.toUpperCase()}</strong>
+                                </div>
+                                <div className="meta-row">
+                                    <span>COOK TIME</span>
+                                    <strong>{recipe.cook_time.toUpperCase()}</strong>
+                                </div>
+                                <div className="meta-row">
+                                    <span>SERVINGS</span>
+                                    <strong>{String(recipe.servings).padStart(2, "0")}</strong>
+                                </div>
+                            </div>
+
+                            {/* Favorite + Rating */}
+                            <div className="save-block">
+                                <div className="favorite-row">
+                                    <button
+                                        className={`fav-btn ${isFavorited ? "fav-active" : ""}`}
+                                        onClick={() => setIsFavorited(v => !v)}
+                                        aria-label="Toggle favourite"
+                                    >
+                                        {isFavorited ? "♥" : "♡"} {isFavorited ? "Favourited" : "Add to Favourites"}
+                                    </button>
+                                </div>
+
+                                <div className="rating-row">
+                                    <span className="rating-label">RATE THIS RECIPE</span>
+                                    <div className="stars">
+                                        {[1, 2, 3, 4, 5].map(n => (
+                                            <button
+                                                key={n}
+                                                className={`star ${n <= (hoverRating || rating) ? "star-on" : ""}`}
+                                                onClick={() => setRating(n)}
+                                                onMouseEnter={() => setHoverRating(n)}
+                                                onMouseLeave={() => setHoverRating(0)}
+                                                aria-label={`Rate ${n} stars`}
+                                            >
+                                                ★
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="feedback-row">
+                                    <span className="rating-label">FEEDBACK (OPTIONAL)</span>
+                                    <textarea
+                                        className="feedback-input"
+                                        placeholder="e.g. Too salty, great texture, would make again..."
+                                        value={feedback}
+                                        onChange={e => setFeedback(e.target.value)}
+                                        rows={3}
+                                    />
+                                </div>
+
                                 <button
-                                    className={`fav-btn ${isFavorited ? "fav-active" : ""}`}
-                                    onClick={() => setIsFavorited(v => !v)}
-                                    aria-label="Toggle favourite"
+                                    className="btn btn-dark"
+                                    onClick={handleSave}
+                                    disabled={saving || saved}
                                 >
-                                    {isFavorited ? "♥" : "♡"} {isFavorited ? "Favourited" : "Add to Favourites"}
+                                    {saved ? "✓ SAVED" : saving ? "SAVING..." : "SAVE TO COLLECTION"}
+                                </button>
+
+                                <button className="btn btn-light" onClick={() => navigate("/review")}>
+                                    START OVER
                                 </button>
                             </div>
+                        </aside>
+                    </main>
 
-                            <div className="rating-row">
-                                <span className="rating-label">RATE THIS RECIPE</span>
-                                <div className="stars">
-                                    {[1, 2, 3, 4, 5].map(n => (
-                                        <button
-                                            key={n}
-                                            className={`star ${n <= (hoverRating || rating) ? "star-on" : ""}`}
-                                            onClick={() => setRating(n)}
-                                            onMouseEnter={() => setHoverRating(n)}
-                                            onMouseLeave={() => setHoverRating(0)}
-                                            aria-label={`Rate ${n} stars`}
-                                        >
-                                            ★
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="feedback-row">
-                                <span className="rating-label">FEEDBACK (OPTIONAL)</span>
-                                <textarea
-                                    className="feedback-input"
-                                    placeholder="e.g. Too salty, great texture, would make again..."
-                                    value={feedback}
-                                    onChange={e => setFeedback(e.target.value)}
-                                    rows={3}
-                                />
-                            </div>
-
-                            <button
-                                className="btn btn-dark"
-                                onClick={handleSave}
-                                disabled={saving || saved}
-                            >
-                                {saved ? "✓ SAVED" : saving ? "SAVING..." : "SAVE TO COLLECTION"}
-                            </button>
-
-                            <button className="btn btn-light" onClick={() => navigate("/review")}>
-                                START OVER
-                            </button>
+                    <section className="ingredients-section">
+                        <h2>
+                            <span className="section-number">01</span> INGREDIENTS
+                        </h2>
+                        <div className="ingredients-grid">
+                            <ul>
+                                {leftIngredients.map((item) => (
+                                    <li key={item}>{item}</li>
+                                ))}
+                            </ul>
+                            <ul>
+                                {rightIngredients.map((item) => (
+                                    <li key={item}>{item}</li>
+                                ))}
+                            </ul>
                         </div>
-                    </aside>
-                </main>
+                    </section>
 
-                <section className="ingredients-section">
-                    <h2>
-                        <span className="section-number">01</span> INGREDIENTS
-                    </h2>
-                    <div className="ingredients-grid">
-                        <ul>
-                            {leftIngredients.map((item) => (
-                                <li key={item}>{item}</li>
-                            ))}
-                        </ul>
-                        <ul>
-                            {rightIngredients.map((item) => (
-                                <li key={item}>{item}</li>
-                            ))}
-                        </ul>
-                    </div>
-                </section>
-
-                <section className="instructions-section">
-                    <h2>
-                        <span className="section-number">02</span> INSTRUCTIONS
-                    </h2>
-                    <div className="instructions-list">
-                        {recipe.steps.map((step, i) => (
-                            <div className="instruction-item" key={i}>
-                                <div className="instruction-number">{String(i + 1).padStart(2, "0")}</div>
-                                <div className="instruction-content">
-                                    <p>{step}</p>
+                    <section className="instructions-section">
+                        <h2>
+                            <span className="section-number">02</span> INSTRUCTIONS
+                        </h2>
+                        <div className="instructions-list">
+                            {recipe.steps.map((step, i) => (
+                                <div className="instruction-item" key={i}>
+                                    <div className="instruction-number">{String(i + 1).padStart(2, "0")}</div>
+                                    <div className="instruction-content">
+                                        <p>{step}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            </div>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            </>
         );
     }
 
     return (
-        <div className="recipe-page">
-            <nav className="topbar">
-                <div className="brand">RECIPEGEN</div>
-                <div className="nav-right">
-                    <button className="back-btn" onClick={() => navigate("/review")}>← BACK</button>
-                </div>
-            </nav>
-
-            <header className="selection-header">
-                <div className="label">AI GENERATED</div>
-                <h1 className="recipe-title">YOUR RECIPES</h1>
-                <div className="selection-subrow">
-                    <p className="selection-subtitle">Select a recipe to view the full instructions.</p>
-                    <button className="regen-btn" onClick={handleRegenerate} disabled={regenerating}>
-                        {regenerating ? "GENERATING..." : "↻ REGENERATE"}
-                    </button>
-                </div>
-                {regenError && <p style={{ color: "red", fontSize: "13px", marginTop: "8px" }}>{regenError}</p>}
-            </header>
-
-            <div className="recipe-cards">
-                {recipeList.map((recipe, i) => (
-                    <div className="recipe-card" key={i} onClick={() => handleSelectRecipe(i)}>
-                        <div className="card-number">{String(i + 1).padStart(2, "0")}</div>
-                        <div className="card-body">
-                            <h2 className="card-title">{recipe.title}</h2>
-                            <p className="card-desc">{recipe.description}</p>
-                            <div className="card-meta">
-                                <span>PREP {recipe.prep_time.toUpperCase()}</span>
-                                <span>COOK {recipe.cook_time.toUpperCase()}</span>
-                                <span>{recipe.servings} SERVINGS</span>
-                            </div>
-                        </div>
-                        <div className="card-arrow">→</div>
+        <>
+            <Navbar />
+            <div className="recipe-page">
+                <nav className="topbar">
+                    <div className="brand">RECIPEGEN</div>
+                    <div className="nav-right">
+                        <button className="back-btn" onClick={() => navigate("/review")}>← BACK</button>
                     </div>
-                ))}
+                </nav>
+
+                <header className="selection-header">
+                    <div className="label">AI GENERATED</div>
+                    <h1 className="recipe-title">YOUR RECIPES</h1>
+                    <div className="selection-subrow">
+                        <p className="selection-subtitle">Select a recipe to view the full instructions.</p>
+                        <button className="regen-btn" onClick={handleRegenerate} disabled={regenerating}>
+                            {regenerating ? "GENERATING..." : "↻ REGENERATE"}
+                        </button>
+                    </div>
+                    {regenError && <p style={{ color: "red", fontSize: "13px", marginTop: "8px" }}>{regenError}</p>}
+                </header>
+
+                <div className="recipe-cards">
+                    {recipeList.map((recipe, i) => (
+                        <div className="recipe-card" key={i} onClick={() => handleSelectRecipe(i)}>
+                            <div className="card-number">{String(i + 1).padStart(2, "0")}</div>
+                            <div className="card-body">
+                                <h2 className="card-title">{recipe.title}</h2>
+                                <p className="card-desc">{recipe.description}</p>
+                                <div className="card-meta">
+                                    <span>PREP {recipe.prep_time.toUpperCase()}</span>
+                                    <span>COOK {recipe.cook_time.toUpperCase()}</span>
+                                    <span>{recipe.servings} SERVINGS</span>
+                                </div>
+                            </div>
+                            <div className="card-arrow">→</div>
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
+        </>
     );
 }

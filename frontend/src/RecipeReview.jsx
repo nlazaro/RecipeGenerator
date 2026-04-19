@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, getDocs, query, orderBy, doc, setDoc } from "firebase/firestore";
 import { useEffect } from "react";
+import Navbar from "./Navbar";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
@@ -210,225 +211,229 @@ export default function recipe_review() {
         }
     };
     return (
-        <div className="container">
-            <header className="header">
-                <h4>
-                    {loading
-                        ? mode === "image"
-                            ? "ANALYZING IMAGE"
-                            : "ANALYZING TEXT"
-                        : "ANALYSIS COMPLETE"}
-                </h4>
-                <h1>IDENTIFIED ITEMS</h1>
-            </header>
+        <>
+            <Navbar />
+            <div className="container"></div>
+            <div className="container">
+                <header className="header">
+                    <h4>
+                        {loading
+                            ? mode === "image"
+                                ? "ANALYZING IMAGE"
+                                : "ANALYZING TEXT"
+                            : "ANALYSIS COMPLETE"}
+                    </h4>
+                    <h1>IDENTIFIED ITEMS</h1>
+                </header>
 
-            <div className="content">
+                <div className="content">
 
-                {/* ✅ TOGGLE */}
-                <div style={{ marginBottom: "16px", display: "flex", gap: "10px" }}>
-                    <button
-                        onClick={() => {
-                            setMode("image");
-                            setTextInput("");
-                        }}
-                        style={{
-                            padding: "8px 16px",
-                            background: mode === "image" ? "#000" : "#ddd",
-                            color: mode === "image" ? "#fff" : "#000",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        Upload Image
-                    </button>
+                    {/* ✅ TOGGLE */}
+                    <div style={{ marginBottom: "16px", display: "flex", gap: "10px" }}>
+                        <button
+                            onClick={() => {
+                                setMode("image");
+                                setTextInput("");
+                            }}
+                            style={{
+                                padding: "8px 16px",
+                                background: mode === "image" ? "#000" : "#ddd",
+                                color: mode === "image" ? "#fff" : "#000",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Upload Image
+                        </button>
 
-                    <button
-                        onClick={() => {
-                            setMode("text");
-                            setSelectedImages([]);
-                        }}
-                        style={{
-                            padding: "8px 16px",
-                            background: mode === "text" ? "#000" : "#ddd",
-                            color: mode === "text" ? "#fff" : "#000",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        Type Ingredients
-                    </button>
-                </div>
+                        <button
+                            onClick={() => {
+                                setMode("text");
+                                setSelectedImages([]);
+                            }}
+                            style={{
+                                padding: "8px 16px",
+                                background: mode === "text" ? "#000" : "#ddd",
+                                color: mode === "text" ? "#fff" : "#000",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Type Ingredients
+                        </button>
+                    </div>
 
-                {/* ✅ IMAGE / TEXT SECTION */}
-                <div className="imageSection">
+                    {/* ✅ IMAGE / TEXT SECTION */}
+                    <div className="imageSection">
 
-                    {mode === "text" && (
-                        <div style={{ width: "100%" }}>
-                            <textarea
-                                placeholder="e.g. 2 apples, 1 gallon milk, chicken breast"
-                                value={textInput}
-                                onChange={(e) => setTextInput(e.target.value)}
-                                style={{
-                                    width: "100%",
-                                    minHeight: "150px",
-                                    padding: "12px",
-                                    borderRadius: "8px",
-                                    border: "1px solid #ccc",
-                                    marginBottom: "12px",
-                                }}
-                            />
+                        {mode === "text" && (
+                            <div style={{ width: "100%" }}>
+                                <textarea
+                                    placeholder="e.g. 2 apples, 1 gallon milk, chicken breast"
+                                    value={textInput}
+                                    onChange={(e) => setTextInput(e.target.value)}
+                                    style={{
+                                        width: "100%",
+                                        minHeight: "150px",
+                                        padding: "12px",
+                                        borderRadius: "8px",
+                                        border: "1px solid #ccc",
+                                        marginBottom: "12px",
+                                    }}
+                                />
 
-                            <button
-                                onClick={handleTextSubmit}
-                                disabled={loading || !textInput.trim()}
-                                className="primary"
-                            >
-                                Analyze Text
-                            </button>
-                        </div>
-                    )}
+                                <button
+                                    onClick={handleTextSubmit}
+                                    disabled={loading || !textInput.trim()}
+                                    className="primary"
+                                >
+                                    Analyze Text
+                                </button>
+                            </div>
+                        )}
 
-                    {mode === "image" && (
-                        <>
-                            {selectedImages.length === 0 ? (
-                                <div className="uploadBox" onClick={handleUploadClick}>
-                                    <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
-                                    <p>Click to upload image</p>
-                                    <p style={{ color: "#777" }}>
-                                        JPG, PNG, WEBP supported
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Show all uploaded images */}
-                                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                                        {selectedImages.map((img, index) => (
-                                            <div
-                                                key={index}
-                                                style={{ position: "relative", display: "inline-block" }}
-                                            >
-                                                <img
-                                                    src={img.url}
-                                                    alt="Uploaded"
-                                                    style={{ width: "120px", borderRadius: "8px" }}
-                                                />
-
-                                                {/* ❌ Delete button */}
-                                                <button
-                                                    onClick={() => removeImage(index)}
-                                                    style={{
-                                                        position: "absolute",
-                                                        top: "5px",
-                                                        right: "5px",
-                                                        background: "rgba(0,0,0,0.6)",
-                                                        color: "#fff",
-                                                        border: "none",
-                                                        borderRadius: "50%",
-                                                        width: "24px",
-                                                        height: "24px",
-                                                        cursor: "pointer",
-                                                        fontSize: "14px",
-                                                        lineHeight: "24px",
-                                                        textAlign: "center",
-                                                    }}
+                        {mode === "image" && (
+                            <>
+                                {selectedImages.length === 0 ? (
+                                    <div className="uploadBox" onClick={handleUploadClick}>
+                                        <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
+                                        <p>Click to upload image</p>
+                                        <p style={{ color: "#777" }}>
+                                            JPG, PNG, WEBP supported
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Show all uploaded images */}
+                                        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                                            {selectedImages.map((img, index) => (
+                                                <div
+                                                    key={index}
+                                                    style={{ position: "relative", display: "inline-block" }}
                                                 >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
+                                                    <img
+                                                        src={img.url}
+                                                        alt="Uploaded"
+                                                        style={{ width: "120px", borderRadius: "8px" }}
+                                                    />
+
+                                                    {/* ❌ Delete button */}
+                                                    <button
+                                                        onClick={() => removeImage(index)}
+                                                        style={{
+                                                            position: "absolute",
+                                                            top: "5px",
+                                                            right: "5px",
+                                                            background: "rgba(0,0,0,0.6)",
+                                                            color: "#fff",
+                                                            border: "none",
+                                                            borderRadius: "50%",
+                                                            width: "24px",
+                                                            height: "24px",
+                                                            cursor: "pointer",
+                                                            fontSize: "14px",
+                                                            lineHeight: "24px",
+                                                            textAlign: "center",
+                                                        }}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* ✅ NEW BUTTON (this is what you wanted) */}
+                                        <button
+                                            disabled={maxReached}
+                                            onClick={handleUploadClick}
+                                            style={{
+                                                marginTop: "12px",
+                                                padding: "8px 12px",
+                                                borderRadius: "6px",
+                                                border: "1px solid #ccc",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            + Add more images
+                                        </button>
+
+                                        {loading && <div className="tag top">Analyzing image...</div>}
+                                    </>
+                                )}
+
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    style={{ display: "none" }}
+                                />
+                            </>
+                        )}
+                    </div>
+
+                    {/* ✅ PANEL */}
+                    <div className="panel">
+                        <div className="panelHeader">
+                            <h3>INGREDIENTS</h3>
+                            <span>{String(ingredients.length).padStart(2, "0")} ITEMS</span>
+                        </div>
+
+                        {error && (
+                            <p style={{ color: "red", marginBottom: "16px" }}>{error}</p>
+                        )}
+
+                        <div className="list">
+                            {ingredients.map((item) => (
+                                <div key={item.id} className="listItem">
+                                    <span className="id">{item.id}</span>
+                                    <div>
+                                        <p className="name">{item.name}</p>
+                                        <p className="detail">{item.detail}</p>
                                     </div>
 
-                                    {/* ✅ NEW BUTTON (this is what you wanted) */}
-                                    <button
-                                        disabled={maxReached}
-                                        onClick={handleUploadClick}
-                                        style={{
-                                            marginTop: "12px",
-                                            padding: "8px 12px",
-                                            borderRadius: "6px",
-                                            border: "1px solid #ccc",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        + Add more images
-                                    </button>
+                                    <span className="edit" onClick={() => editIngredient(item.id)}>
+                                        ✎
+                                    </span>
 
-                                    {loading && <div className="tag top">Analyzing image...</div>}
-                                </>
-                            )}
-
-                            <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                style={{ display: "none" }}
-                            />
-                        </>
-                    )}
-                </div>
-
-                {/* ✅ PANEL */}
-                <div className="panel">
-                    <div className="panelHeader">
-                        <h3>INGREDIENTS</h3>
-                        <span>{String(ingredients.length).padStart(2, "0")} ITEMS</span>
-                    </div>
-
-                    {error && (
-                        <p style={{ color: "red", marginBottom: "16px" }}>{error}</p>
-                    )}
-
-                    <div className="list">
-                        {ingredients.map((item) => (
-                            <div key={item.id} className="listItem">
-                                <span className="id">{item.id}</span>
-                                <div>
-                                    <p className="name">{item.name}</p>
-                                    <p className="detail">{item.detail}</p>
+                                    <span className="delete" onClick={() => removeIngredient(item.id)}>
+                                        🗑
+                                    </span>
                                 </div>
+                            ))}
+                        </div>
 
-                                <span className="edit" onClick={() => editIngredient(item.id)}>
-                                    ✎
-                                </span>
+                        <button
+                            className="primary"
+                            onClick={handleConfirm}
+                            disabled={loading || ingredients.length === 0}
+                        >
+                            CREATE RECIPE
+                        </button>
 
-                                <span className="delete" onClick={() => removeIngredient(item.id)}>
-                                    🗑
-                                </span>
-                            </div>
-                        ))}
+                        <button className="secondary" onClick={addIngredient}>
+                            ADD MISSING ITEM
+                        </button>
+
+                        <button className="secondary">
+                            UPDATE INVENTORY
+                        </button>
+
+
                     </div>
-
-                    <button
-                        className="primary"
-                        onClick={handleConfirm}
-                        disabled={loading || ingredients.length === 0}
-                    >
-                        CREATE RECIPE
-                    </button>
-
-                    <button className="secondary" onClick={addIngredient}>
-                        ADD MISSING ITEM
-                    </button>
-
-                    <button className="secondary">
-                        UPDATE INVENTORY
-                    </button>
-
 
                 </div>
 
+                <footer className="footer">
+                    <p>
+                        “The quality of identification improves with natural lighting and
+                        clear separation of ingredients.”
+                    </p>
+                </footer>
             </div>
-
-            <footer className="footer">
-                <p>
-                    “The quality of identification improves with natural lighting and
-                    clear separation of ingredients.”
-                </p>
-            </footer>
-        </div>
+        </>
     );
 }
