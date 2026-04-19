@@ -8,6 +8,7 @@ import ImageUpload from './ImageUpload'
 import Dashboard from './Dashboard'
 import IngredientInput from './IngredientInput'
 import Inventory from './Inventory'
+import RecipeCollection from './RecipeCollection'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/ingredients" element={<IngredientInput />} />
       <Route path="/inventory" element={<Inventory />} />
+      <Route path="/recipes" element={<RecipeCollection />} />
     </Routes>
   )
 }
