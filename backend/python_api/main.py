@@ -2,6 +2,7 @@ import base64
 import json
 import os
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,10 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise RuntimeError("GROQ_API_KEY is not set.")
 
+UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
+if not UNSPLASH_ACCESS_KEY:
+    raise RuntimeError("UNSPLASH_ACCESS_KEY is not set.")
+
 client = Groq(api_key=GROQ_API_KEY)
 
 app = FastAPI()
@@ -21,7 +26,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -166,6 +171,22 @@ async def analyze_image(image: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
 
     return result
+
+
+@app.get("/recipe-image")
+async def recipe_image(title: str):
+    async with httpx.AsyncClient() as client_http:
+        resp = await client_http.get(
+            "https://api.unsplash.com/search/photos",
+            params={"query": title, "per_page": 1, "orientation": "landscape"},
+            headers={"Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"},
+        )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail="Unsplash API error.")
+    results = resp.json().get("results", [])
+    if not results:
+        return {"image_url": None}
+    return {"image_url": results[0]["urls"]["regular"]}
 
 
 @app.post("/analyze-text")
