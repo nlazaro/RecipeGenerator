@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
@@ -49,6 +49,17 @@ export default function Confirmation() {
     const [feedback, setFeedback] = useState("");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [recipeImage, setRecipeImage] = useState(null);
+
+    useEffect(() => {
+        if (selected === null) { setRecipeImage(null); return; }
+        const title = recipeList[selected]?.title;
+        if (!title) return;
+        fetch(`http://localhost:8000/recipe-image?title=${encodeURIComponent(title)}`)
+            .then(r => r.json())
+            .then(d => setRecipeImage(d.image_url || null))
+            .catch(() => setRecipeImage(null));
+    }, [selected]);
 
     function handleSelectRecipe(i) {
         setSelected(i);
@@ -120,6 +131,11 @@ export default function Confirmation() {
                         <div className="label">AI GENERATED RECIPE</div>
                         <h1 className="recipe-title">{recipe.title.toUpperCase()}</h1>
                         <p className="recipe-description">{recipe.description}</p>
+                        {recipeImage && (
+                            <div className="hero-image-wrap">
+                                <img className="hero-image" src={recipeImage} alt={recipe.title} />
+                            </div>
+                        )}
                     </section>
 
                     <aside className="recipe-sidebar">
