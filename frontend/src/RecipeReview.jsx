@@ -1,230 +1,154 @@
 import React, { useRef, useState, useEffect } from "react";
-import "./reciple_review.css";
+import "./RecipeReview.css";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, getDocs, query, orderBy, doc, setDoc } from "firebase/firestore";
-import Navbar from "./Navbar";
+import AppNav from "./AppNav";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
+const VALID_CATS = ["Proteins", "Vegetables", "Fruits", "Grains", "Dairy", "Spices", "Condiments", "Other"];
+
+function toInventoryItem(item) {
+    const cat = VALID_CATS.includes(item.category) ? item.category : "Other";
+    const count = item.count != null && item.count !== "" ? Number(item.count) : undefined;
+    return { item_name: item.name, category: cat, count, detail: item.detail };
+}
+
+const CameraIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+    </svg>
+);
+
+const TypeIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
+        <line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
+    </svg>
+);
+
+const UploadIcon = () => (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+    </svg>
+);
+
+const EditIcon = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </svg>
+);
+
+const ArrowIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+    </svg>
+);
+
 export default function RecipeReview() {
-    const navigate = useNavigate();
+    const navigate    = useNavigate();
     const fileInputRef = useRef(null);
 
-    const [ingredients, setIngredients] = useState([]);
+    const [displayName,    setDisplayName]    = useState("");
+    const [ingredients,    setIngredients]    = useState([]);
     const [selectedImages, setSelectedImages] = useState([]);
-
-    const removeImage = (indexToRemove) => {
-        setSelectedImages((prev) =>
-            prev.filter((_, index) => index !== indexToRemove)
-        );
-    };
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [mode, setMode] = useState("image");
-    const [textInput, setTextInput] = useState("");
+    const [loading,        setLoading]        = useState(false);
+    const [error,          setError]          = useState("");
+    const [mode,           setMode]           = useState("image");
+    const [textInput,      setTextInput]      = useState("");
     const [inventorySaved, setInventorySaved] = useState(false);
+    const [editingId,      setEditingId]      = useState(null);
+    const [editDraft,      setEditDraft]      = useState({ name: "", detail: "" });
+    const [dragOver,       setDragOver]       = useState(false);
 
     useEffect(() => {
+        const unsub = auth.onAuthStateChanged(u => setDisplayName(u?.displayName || ""));
+        return unsub;
+    }, []);
 
+    useEffect(() => {
         if (mode !== "image") return;
-        const allIngredients = selectedImages.flatMap(img => img.ingredients || []);
-        setIngredients(allIngredients);
+        setIngredients(selectedImages.flatMap(img => img.ingredients || []));
     }, [selectedImages]);
-
-    const removeIngredient = (id) => {
-        setIngredients((prev) => prev.filter((item) => item.id !== id));
-    };
-
-    const addIngredient = () => {
-        const newItem = {
-            id: Date.now().toString(),
-            name: "New Ingredient",
-            detail: "Edit me",
-        };
-        setIngredients((prev) => [...prev, newItem]);
-    };
-
-    const editIngredient = (id) => {
-        const newName = prompt("Enter new name:");
-        if (!newName) return;
-
-        const newQty = prompt("Enter quantity:");
-        if (!newQty) return;
-
-        setIngredients((prev) =>
-            prev.map((item) =>
-                item.id === id
-                    ? {
-                        ...item,
-                        name: newName,
-                        detail: `Qty: ${newQty}`,
-                    }
-                    : item
-            )
-        );
-    };
 
     const maxReached = selectedImages.length >= 9;
 
-    const handleConfirm = async () => {
-        if (ingredients.length === 0) return;
-        setError("");
-        setLoading(true);
+    /* ── INGREDIENT CRUD ── */
+    const removeIngredient = (id) =>
+        setIngredients(prev => prev.filter(item => item.id !== id));
 
-        const newItems = ingredients.map((item) => ({
-            item_name: item.name,
-            detail: item.detail,
-        }));
-
-        const uid = auth.currentUser?.uid;
-
-        let liked_recipes = [];
-        let disliked_recipes = [];
-        let inventory = newItems;
-
-        try {
-            if (uid) {
-                const userSnap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
-                const recipeHistory = userSnap.docs.map(d => d.data());
-                const likedSet = new Map();
-                recipeHistory.forEach(r => {
-                    if (r.isFavorited || r.rating >= 4) likedSet.set(r.title, r);
-                });
-                liked_recipes = [...likedSet.values()].slice(0, 3).map(r => r.title);
-                disliked_recipes = recipeHistory.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
-
-                const { getDoc } = await import("firebase/firestore");
-                const userDoc = await getDoc(doc(db, "users", uid));
-                const savedInventory = userDoc.data()?.inventory || [];
-                const newItemNames = new Set(newItems.map(i => i.item_name.toLowerCase()));
-                const merged = [
-                    ...newItems,
-                    ...savedInventory.filter(i => !newItemNames.has(i.item_name.toLowerCase())),
-                ];
-                inventory = merged;
-
-                await setDoc(doc(db, "users", uid), {
-                    inventory,
-                    inventoryUpdatedAt: new Date(),
-                }, { merge: true });
-            }
-
-            const response = await fetch(RECIPE_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ inventory, liked_recipes, disliked_recipes }),
-            });
-
-            if (!response.ok) throw new Error(`Recipe API error: ${response.status}`);
-            const data = await response.json();
-
-            navigate("/confirmation", { state: { recipes: data, inventory } });
-        } catch (err) {
-            setError("Inventory saved! Recipe generation failed: " + err.message);
-        } finally {
-            setLoading(false);
-        }
+    const addIngredient = () => {
+        const newId = Date.now().toString();
+        setIngredients(prev => [...prev, { id: newId, name: "New Ingredient", detail: "Edit quantity", category: "Other" }]);
+        setEditingId(newId);
+        setEditDraft({ name: "New Ingredient", detail: "Edit quantity" });
     };
 
-    const handleUpdateInventory = async () => {
-        if (ingredients.length === 0) return;
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
-        try {
-            await setDoc(doc(db, "users", uid), {
-                inventory,
-                inventoryUpdatedAt: new Date(),
-            }, { merge: true });
-            setInventorySaved(true);
-            setTimeout(() => setInventorySaved(false), 2500);
-        } catch (err) {
-            setError("Failed to save inventory: " + err.message);
-        }
+    const startEdit = (item) => {
+        setEditingId(item.id);
+        setEditDraft({ name: item.name, detail: item.detail });
     };
 
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
+    const commitEdit = () => {
+        if (!editDraft.name.trim()) return;
+        setIngredients(prev =>
+            prev.map(item => item.id === editingId ? { ...item, ...editDraft } : item)
+        );
+        setEditingId(null);
     };
 
-    const handleTextSubmit = async () => {
-        if (!textInput.trim()) return;
+    const cancelEdit = () => setEditingId(null);
 
-        setError("");
-        setLoading(true);
+    /* ── IMAGE UPLOAD ── */
+    const handleUploadClick = () => fileInputRef.current?.click();
 
-        try {
-            const response = await fetch("http://localhost:8000/analyze-text", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: textInput }),
-            });
+    const removeImage = (idx) =>
+        setSelectedImages(prev => prev.filter((_, i) => i !== idx));
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.detail || "Failed to analyze text.");
-            }
-
-            const mappedIngredients = (data.inventory || []).map((item, index) => ({
-                id: String(index + 1).padStart(2, "0"),
-                name: item.item_name,
-                detail: `${item.category} • Qty: ${item.count}`,
-            }));
-
-            setIngredients((prev) => [...prev, ...mappedIngredients]);
-            setSelectedImages([]);
-        } catch (err) {
-            setError(err.message || "Something went wrong.");
-            setIngredients([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleFileChange = async (e) => {
-        const files = Array.from(e.target.files);
+    const processFiles = async (files) => {
         if (!files.length) return;
-
         setError("");
         setLoading(true);
 
-        const newPreviews = files.map((file) => ({
+        const newPreviews = Array.from(files).map(file => ({
             file,
             url: URL.createObjectURL(file),
             ingredients: [],
         }));
 
-        setSelectedImages((prev) => {
-            const combined = [...prev, ...newPreviews];
-            return combined.slice(0, 9);
-        });
+        setSelectedImages(prev => [...prev, ...newPreviews].slice(0, 9));
 
         const formData = new FormData();
         formData.append("image", files[0]);
 
         try {
-            const response = await fetch("http://localhost:8000/analyze-image", {
-                method: "POST",
-                body: formData,
-            });
+            const res  = await fetch("http://localhost:8000/analyze-image", { method: "POST", body: formData });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Failed to analyze image.");
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.detail || "Failed to analyze image.");
-            }
-
-            const mappedIngredients = (data.inventory || []).map((item, index) => ({
-                id: String(index + 1).padStart(2, "0"),
-                name: item.item_name,
-                detail: `${item.category} • Qty: ${item.count}`,
+            const mapped = (data.inventory || []).map((item, i) => ({
+                id:       Date.now().toString() + i,
+                name:     item.item_name,
+                detail:   `${item.category} · Qty: ${item.count}`,
+                category: item.category || "Other",
+                count:    item.count,
             }));
 
-            setSelectedImages((prev) => {
+            setSelectedImages(prev => {
                 const updated = [...prev];
-                updated[updated.length - newPreviews.length].ingredients = mappedIngredients;
+                updated[updated.length - newPreviews.length].ingredients = mapped;
                 return updated;
             });
         } catch (err) {
@@ -233,226 +157,313 @@ export default function RecipeReview() {
             setLoading(false);
         }
     };
+
+    const handleFileChange = (e) => processFiles(Array.from(e.target.files));
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+        if (files.length) processFiles(files);
+    };
+
+    /* ── TEXT ANALYSIS ── */
+    const handleTextSubmit = async () => {
+        if (!textInput.trim()) return;
+        setError("");
+        setLoading(true);
+        try {
+            const res  = await fetch("http://localhost:8000/analyze-text", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ text: textInput }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Failed to analyze text.");
+
+            const mapped = (data.inventory || []).map((item, i) => ({
+                id:       Date.now().toString() + i,
+                name:     item.item_name,
+                detail:   `${item.category} · Qty: ${item.count}`,
+                category: item.category || "Other",
+                count:    item.count,
+            }));
+            setIngredients(prev => [...prev, ...mapped]);
+            setTextInput("");
+        } catch (err) {
+            setError(err.message || "Something went wrong.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ── RECIPE GENERATION ── */
+    const handleConfirm = async () => {
+        if (ingredients.length === 0) return;
+        setError("");
+        setLoading(true);
+
+        const newItems = ingredients.map(toInventoryItem);
+        const uid      = auth.currentUser?.uid;
+        let liked_recipes = [], disliked_recipes = [], inventory = newItems;
+
+        try {
+            if (uid) {
+                const snap    = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
+                const history = snap.docs.map(d => d.data()).filter(r => r.rating);
+                liked_recipes    = history.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
+                disliked_recipes = history.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
+
+                const { getDoc } = await import("firebase/firestore");
+                const userDoc    = await getDoc(doc(db, "users", uid));
+                const saved      = userDoc.data()?.inventory || [];
+                const newNames   = new Set(newItems.map(i => i.item_name.toLowerCase()));
+                inventory = [...newItems, ...saved.filter(i => !newNames.has(i.item_name.toLowerCase()))];
+
+                await setDoc(doc(db, "users", uid), { inventory, inventoryUpdatedAt: new Date() }, { merge: true });
+            }
+
+            const res  = await fetch(RECIPE_URL, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ inventory, liked_recipes, disliked_recipes }),
+            });
+            if (!res.ok) throw new Error(`Recipe API error: ${res.status}`);
+            const data = await res.json();
+            navigate("/confirmation", { state: { recipes: data, inventory } });
+        } catch (err) {
+            setError("Recipe generation failed: " + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ── SAVE TO PANTRY ── */
+    const handleUpdateInventory = async () => {
+        if (ingredients.length === 0) return;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const inventory = ingredients.map(toInventoryItem);
+        try {
+            await setDoc(doc(db, "users", uid), { inventory, inventoryUpdatedAt: new Date() }, { merge: true });
+            setInventorySaved(true);
+            setTimeout(() => setInventorySaved(false), 2500);
+        } catch (err) {
+            setError("Failed to save: " + err.message);
+        }
+    };
+
+    /* ── RENDER ── */
     return (
-        <>
-            <Navbar />
-            <div className="container">
-                <header className="header">
-                    <h4>
-                        {loading
-                            ? mode === "image"
-                                ? "ANALYZING IMAGE"
-                                : "ANALYZING TEXT"
-                            : "ANALYSIS COMPLETE"}
-                    </h4>
-                    <h1>IDENTIFIED ITEMS</h1>
-                </header>
+        <div className="rr-page">
+            <AppNav displayName={displayName} />
 
-                <div className="content">
+            {/* Header */}
+            <div className="rr-header-band">
+                <div className="rr-header-inner">
+                    <span className="rr-eyebrow">INGREDIENT SCAN</span>
+                    <h1 className="rr-title">What&rsquo;s in<br />your kitchen?</h1>
+                    <p className="rr-subtitle">
+                        Upload a photo or type your ingredients &mdash; we&rsquo;ll identify everything and generate personalised recipes.
+                    </p>
+                </div>
+            </div>
 
-                    <div style={{ marginBottom: "16px", display: "flex", gap: "10px" }}>
+            {/* Body */}
+            <div className="rr-body">
+
+                {/* ── LEFT: INPUT ── */}
+                <div className="rr-input-col">
+
+                    {/* Mode toggle */}
+                    <div className="rr-mode-toggle">
                         <button
-                            onClick={() => {
-                                setMode("image");
-                                setTextInput("");
-                            }}
-                            style={{
-                                padding: "8px 16px",
-                                background: mode === "image" ? "#000" : "#ddd",
-                                color: mode === "image" ? "#fff" : "#000",
-                                border: "none",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                            }}
+                            className={`rr-mode-btn${mode === "image" ? " rr-mode-btn--on" : ""}`}
+                            onClick={() => { setMode("image"); setTextInput(""); }}
                         >
-                            Upload Image
+                            <CameraIcon /> Photo Scan
                         </button>
-
                         <button
-                            onClick={() => {
-                                setMode("text");
-                                setSelectedImages([]);
-                            }}
-                            style={{
-                                padding: "8px 16px",
-                                background: mode === "text" ? "#000" : "#ddd",
-                                color: mode === "text" ? "#fff" : "#000",
-                                border: "none",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                            }}
+                            className={`rr-mode-btn${mode === "text" ? " rr-mode-btn--on" : ""}`}
+                            onClick={() => { setMode("text"); setSelectedImages([]); setIngredients([]); }}
                         >
-                            Type Ingredients
+                            <TypeIcon /> Type Items
                         </button>
                     </div>
 
-                    <div className="imageSection">
-
-                        {mode === "text" && (
-                            <div style={{ width: "100%" }}>
-                                <textarea
-                                    placeholder="e.g. 2 apples, 1 gallon milk, chicken breast"
-                                    value={textInput}
-                                    onChange={(e) => setTextInput(e.target.value)}
-                                    style={{
-                                        width: "100%",
-                                        minHeight: "150px",
-                                        padding: "12px",
-                                        borderRadius: "8px",
-                                        border: "1px solid #ccc",
-                                        marginBottom: "12px",
-                                    }}
-                                />
-
-                                <button
-                                    onClick={handleTextSubmit}
-                                    disabled={loading || !textInput.trim()}
-                                    className="primary"
+                    {/* Image zone */}
+                    {mode === "image" && (
+                        <div className="rr-image-zone">
+                            {selectedImages.length === 0 ? (
+                                <div
+                                    className={`rr-dropzone${dragOver ? " rr-dropzone--drag" : ""}`}
+                                    onClick={handleUploadClick}
+                                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                                    onDragLeave={() => setDragOver(false)}
+                                    onDrop={handleDrop}
                                 >
-                                    Analyze Text
-                                </button>
-                            </div>
-                        )}
+                                    <div className="rr-dropzone-icon"><UploadIcon /></div>
+                                    <p className="rr-dropzone-title">Drop a photo here or click to browse</p>
+                                    <p className="rr-dropzone-sub">JPG, PNG, WEBP &middot; up to 9 images</p>
+                                </div>
+                            ) : (
+                                <div className="rr-image-grid">
+                                    {selectedImages.map((img, i) => (
+                                        <div className="rr-img-thumb" key={i}>
+                                            <img src={img.url} alt="Uploaded ingredient scan" />
+                                            <button className="rr-img-remove" onClick={() => removeImage(i)}>✕</button>
+                                        </div>
+                                    ))}
+                                    {!maxReached && (
+                                        <button className="rr-img-add" onClick={handleUploadClick}>
+                                            <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>
+                                            <span>Add</span>
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
-                        {mode === "image" && (
-                            <>
-                                {selectedImages.length === 0 ? (
-                                    <div className="uploadBox" onClick={handleUploadClick}>
-                                        <div style={{ fontSize: "48px", marginBottom: "16px" }}>⬆</div>
-                                        <p>Click to upload image</p>
-                                        <p style={{ color: "#777" }}>
-                                            JPG, PNG, WEBP supported
-                                        </p>
+                            {loading && mode === "image" && (
+                                <div className="rr-analyzing">
+                                    <div className="rr-pulse" />
+                                    Analyzing image&hellip;
+                                </div>
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                style={{ display: "none" }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Text zone */}
+                    {mode === "text" && (
+                        <div className="rr-text-zone">
+                            <label className="rr-label" htmlFor="rr-text-input">
+                                List your ingredients
+                            </label>
+                            <textarea
+                                id="rr-text-input"
+                                className="rr-textarea"
+                                placeholder="e.g. 2 chicken breasts, 1 cup rice, 3 garlic cloves, olive oil&#10;&#10;Just write naturally — we'll sort it out."
+                                value={textInput}
+                                onChange={e => setTextInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleTextSubmit(); }}
+                            />
+                            <div className="rr-textarea-hint">
+                                {textInput.length > 0 ? `${textInput.length} chars · Cmd+Enter to analyze` : ""}
+                            </div>
+                            <button
+                                className="rr-analyze-btn"
+                                onClick={handleTextSubmit}
+                                disabled={loading || !textInput.trim()}
+                            >
+                                {loading ? "Analyzing\u2026" : "Analyze \u2192"}
+                            </button>
+                        </div>
+                    )}
+
+                    {error && <div className="rr-error">{error}</div>}
+                </div>
+
+                {/* ── RIGHT: PANEL ── */}
+                <div className="rr-panel">
+                    <div className="rr-panel-hd">
+                        <div>
+                            <div className="rr-panel-title">IDENTIFIED INGREDIENTS</div>
+                            <div className="rr-panel-count">
+                                {ingredients.length === 0
+                                    ? "Nothing found yet"
+                                    : `${ingredients.length} item${ingredients.length === 1 ? "" : "s"} ready`}
+                            </div>
+                        </div>
+                        <button className="rr-add-btn" onClick={addIngredient}>
+                            + Add item
+                        </button>
+                    </div>
+
+                    <div className="rr-list">
+                        {ingredients.length === 0 ? (
+                            <div className="rr-list-empty">
+                                <div className="rr-list-empty-icon">🥬</div>
+                                <p>No ingredients yet</p>
+                                <p>Upload a photo or type your items to get started</p>
+                            </div>
+                        ) : (
+                            ingredients.map((item, i) => (
+                                editingId === item.id ? (
+                                    <div key={item.id} className="rr-item rr-item--editing">
+                                        <span className="rr-item-num">{String(i + 1).padStart(2, "0")}</span>
+                                        <div className="rr-item-edit">
+                                            <input
+                                                className="rr-edit-name"
+                                                value={editDraft.name}
+                                                onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))}
+                                                onKeyDown={e => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                                autoFocus
+                                            />
+                                            <input
+                                                className="rr-edit-detail"
+                                                value={editDraft.detail}
+                                                onChange={e => setEditDraft(d => ({ ...d, detail: e.target.value }))}
+                                                onKeyDown={e => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") cancelEdit(); }}
+                                                placeholder="Category · Quantity"
+                                            />
+                                            <div className="rr-edit-actions">
+                                                <button className="rr-edit-save" onClick={commitEdit}>Save</button>
+                                                <button className="rr-edit-cancel" onClick={cancelEdit}>Cancel</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <>
-                                        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                                            {selectedImages.map((img, index) => (
-                                                <div
-                                                    key={index}
-                                                    style={{ position: "relative", display: "inline-block" }}
-                                                >
-                                                    <img
-                                                        src={img.url}
-                                                        alt="Uploaded"
-                                                        style={{ width: "120px", borderRadius: "8px" }}
-                                                    />
-
-                                                    <button
-                                                        onClick={() => removeImage(index)}
-                                                        style={{
-                                                            position: "absolute",
-                                                            top: "5px",
-                                                            right: "5px",
-                                                            background: "rgba(0,0,0,0.6)",
-                                                            color: "#fff",
-                                                            border: "none",
-                                                            borderRadius: "50%",
-                                                            width: "24px",
-                                                            height: "24px",
-                                                            cursor: "pointer",
-                                                            fontSize: "14px",
-                                                            lineHeight: "24px",
-                                                            textAlign: "center",
-                                                        }}
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                </div>
-                                            ))}
+                                    <div key={item.id} className="rr-item">
+                                        <span className="rr-item-num">{String(i + 1).padStart(2, "0")}</span>
+                                        <div className="rr-item-body">
+                                            <div className="rr-item-name">{item.name}</div>
+                                            <div className="rr-item-detail">{item.detail}</div>
                                         </div>
-
-                                        <button
-                                            disabled={maxReached}
-                                            onClick={handleUploadClick}
-                                            style={{
-                                                marginTop: "12px",
-                                                padding: "8px 12px",
-                                                borderRadius: "6px",
-                                                border: "1px solid #ccc",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            + Add more images
-                                        </button>
-
-                                        {loading && <div className="tag top">Analyzing image...</div>}
-                                    </>
-                                )}
-
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                    style={{ display: "none" }}
-                                />
-                            </>
+                                        <div className="rr-item-actions">
+                                            <button className="rr-icon-btn rr-icon-btn--edit" onClick={() => startEdit(item)} title="Edit">
+                                                <EditIcon />
+                                            </button>
+                                            <button className="rr-icon-btn rr-icon-btn--del" onClick={() => removeIngredient(item.id)} title="Remove">
+                                                <TrashIcon />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            ))
                         )}
                     </div>
 
-                    <div className="panel">
-                        <div className="panelHeader">
-                            <h3>INGREDIENTS</h3>
-                            <span>{String(ingredients.length).padStart(2, "0")} ITEMS</span>
-                        </div>
-
-                        {error && (
-                            <p style={{ color: "red", marginBottom: "16px" }}>{error}</p>
-                        )}
-
-                        <div className="list">
-                            {ingredients.map((item) => (
-                                <div key={item.id} className="listItem">
-                                    <span className="id">{item.id}</span>
-                                    <div>
-                                        <p className="name">{item.name}</p>
-                                        <p className="detail">{item.detail}</p>
-                                    </div>
-
-                                    <span className="edit" onClick={() => editIngredient(item.id)}>
-                                        ✎
-                                    </span>
-
-                                    <span className="delete" onClick={() => removeIngredient(item.id)}>
-                                        🗑
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-
+                    <div className="rr-panel-foot">
                         <button
-                            className="primary"
+                            className="rr-cta-btn"
                             onClick={handleConfirm}
                             disabled={loading || ingredients.length === 0}
                         >
-                            CREATE RECIPE
+                            {loading ? (
+                                <><div className="rr-btn-spinner" /> Generating&hellip;</>
+                            ) : (
+                                <>Generate Recipes <ArrowIcon /></>
+                            )}
                         </button>
-
-                        <button className="secondary" onClick={addIngredient}>
-                            ADD MISSING ITEM
-                        </button>
-
                         <button
-                            className="secondary"
+                            className="rr-save-btn"
                             onClick={handleUpdateInventory}
-                            disabled={loading || ingredients.length === 0}
+                            disabled={ingredients.length === 0}
                         >
-                            {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
+                            {inventorySaved ? "✓ Saved to Pantry" : "Save to Pantry"}
                         </button>
-
                     </div>
-
                 </div>
 
-                <footer className="footer">
-                    <p>
-                        “The quality of identification improves with natural lighting and
-                        clear separation of ingredients.”
-                    </p>
-                </footer>
             </div>
-        </>
+        </div>
     );
 }
