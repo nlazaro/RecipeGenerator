@@ -5,6 +5,9 @@ import ProfileSetup from './ProfileSetup'
 import RecipeReview from './RecipeReview'
 import Confirmation from './Confirmation'
 import ImageUpload from './ImageUpload'
+import Dashboard from './Dashboard'
+import IngredientInput from './IngredientInput'
+import Inventory from './Inventory'
 import RecipeCollection from './RecipeCollection'
 
 function App() {
@@ -16,6 +19,9 @@ function App() {
       <Route path="/scan" element={<ImageUpload />} />
       <Route path="/review" element={<RecipeReview />} />
       <Route path="/confirmation" element={<Confirmation />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/ingredients" element={<IngredientInput />} />
+      <Route path="/inventory" element={<Inventory />} />
       <Route path="/recipes" element={<RecipeCollection />} />
     </Routes>
   )
