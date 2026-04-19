@@ -9,6 +9,8 @@ import Dashboard from './Dashboard'
 import IngredientInput from './IngredientInput'
 import Inventory from './Inventory'
 import RecipeCollection from './RecipeCollection'
+import Inventory from './Inventory'
+import Dashboard from './Dashboard'
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
       <Route path="/ingredients" element={<IngredientInput />} />
       <Route path="/inventory" element={<Inventory />} />
       <Route path="/recipes" element={<RecipeCollection />} />
+      <Route path="/inventory" element={<Inventory />} />
+      <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   )
 }
