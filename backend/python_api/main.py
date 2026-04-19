@@ -25,15 +25,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-INVENTORY_PROMPT = """You are a highly precise food inventory vision agent for a healthcare application. Your task is to analyze images of food, groceries, or refrigerators and extract the items present.
+INVENTORY_PROMPT = """You are a highly precise food inventory agent for a healthcare application. Your task is to extract food and drink items only.
 
 Rules:
 1. You MUST output strictly in JSON format. Do not include conversational filler like "Here is the JSON."
 2. The JSON must contain a single key called "inventory", which is a list of objects.
 3. Each object must have exactly three keys:
    - "item_name" (string)
-   - "category" (string): [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other]
+   - "category" (string): must be one of [Produce, Dairy, Protein, Pantry, Beverage, Snack, Other]
    - "count" (integer)
+4. ONLY include items that are edible food or drink. If an item is not a food or drink (e.g. clothing, tools, furniture, electronics), silently skip it — do not include it in the output.
+5. If the input contains no food or drink items at all, return: {"inventory": []}
 """
 
 RECIPE_PROMPT = """You are a creative chef AI. Given a list of available ingredients, generate 3 diverse recipe suggestions.
