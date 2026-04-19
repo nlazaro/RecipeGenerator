@@ -6,7 +6,6 @@ export default function Navbar() {
     const location = useLocation();
 
     const navItems = [
-        { label: "Scan", path: "/scan" },
         { label: "Review", path: "/review" },
         { label: "Recipes", path: "/confirmation" },
         { label: "Profile", path: "/profile" },
