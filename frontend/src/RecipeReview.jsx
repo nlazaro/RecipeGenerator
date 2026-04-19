@@ -24,6 +24,7 @@ export default function recipe_review() {
     const [error, setError] = useState("");
     const [mode, setMode] = useState("image");
     const [textInput, setTextInput] = useState("");
+    const [inventorySaved, setInventorySaved] = useState(false);
 
     useEffect(() => {
 
@@ -72,7 +73,7 @@ export default function recipe_review() {
         setError("");
         setLoading(true);
 
-        const inventory = ingredients.map((item) => ({
+        const newItems = ingredients.map((item) => ({
             item_name: item.name,
             detail: item.detail,
         }));
@@ -81,18 +82,29 @@ export default function recipe_review() {
 
         let liked_recipes = [];
         let disliked_recipes = [];
+        let inventory = newItems;
 
         try {
             if (uid) {
+                const userSnap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
+                const recipeHistory = userSnap.docs.map(d => d.data()).filter(r => r.rating);
+                liked_recipes = recipeHistory.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
+                disliked_recipes = recipeHistory.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
+
+                const { getDoc } = await import("firebase/firestore");
+                const userDoc = await getDoc(doc(db, "users", uid));
+                const savedInventory = userDoc.data()?.inventory || [];
+                const newItemNames = new Set(newItems.map(i => i.item_name.toLowerCase()));
+                const merged = [
+                    ...newItems,
+                    ...savedInventory.filter(i => !newItemNames.has(i.item_name.toLowerCase())),
+                ];
+                inventory = merged;
+
                 await setDoc(doc(db, "users", uid), {
                     inventory,
                     inventoryUpdatedAt: new Date(),
                 }, { merge: true });
-
-                const snap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
-                const saved = snap.docs.map(d => d.data()).filter(r => r.rating);
-                liked_recipes = saved.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
-                disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
             }
 
             const response = await fetch(RECIPE_URL, {
@@ -109,6 +121,23 @@ export default function recipe_review() {
             setError("Inventory saved! Recipe generation failed: " + err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateInventory = async () => {
+        if (ingredients.length === 0) return;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
+        try {
+            await setDoc(doc(db, "users", uid), {
+                inventory,
+                inventoryUpdatedAt: new Date(),
+            }, { merge: true });
+            setInventorySaved(true);
+            setTimeout(() => setInventorySaved(false), 2500);
+        } catch (err) {
+            setError("Failed to save inventory: " + err.message);
         }
     };
 
@@ -414,8 +443,12 @@ export default function recipe_review() {
                         ADD MISSING ITEM
                     </button>
 
-                    <button className="secondary">
-                        UPDATE INVENTORY
+                    <button
+                        className="secondary"
+                        onClick={handleUpdateInventory}
+                        disabled={loading || ingredients.length === 0}
+                    >
+                        {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
                     </button>
 
 
