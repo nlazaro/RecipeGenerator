@@ -38,7 +38,7 @@ export default function recipe_review() {
 
     const addIngredient = () => {
         const newItem = {
-            id: Date.now().toString(), // ✅ FIXED
+            // id: Date.now().toString(), // ✅ FIXED
             name: "New Ingredient",
             detail: "Edit me",
         };
@@ -407,13 +407,20 @@ export default function recipe_review() {
                         onClick={handleConfirm}
                         disabled={loading || ingredients.length === 0}
                     >
-                        CONFIRM SELECTION →
+                        CREATE RECIPE
                     </button>
 
                     <button className="secondary" onClick={addIngredient}>
                         ADD MISSING ITEM
                     </button>
+
+                    <button className="secondary">
+                        UPDATE INVENTORY
+                    </button>
+
+
                 </div>
+
             </div>
 
             <footer className="footer">
