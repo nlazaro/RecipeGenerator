@@ -16,7 +16,12 @@ function App() {
       <Route path="/scan" element={<ImageUpload />} />
       <Route path="/review" element={<RecipeReview />} />
       <Route path="/confirmation" element={<Confirmation />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/ingredients" element={<IngredientInput />} />
+      <Route path="/inventory" element={<Inventory />} />
       <Route path="/recipes" element={<RecipeCollection />} />
+      <Route path="/inventory" element={<Inventory />} />
+      <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   )
 }
