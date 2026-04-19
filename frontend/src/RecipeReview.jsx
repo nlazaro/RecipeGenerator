@@ -141,6 +141,27 @@ export default function recipe_review() {
         }
     };
 
+    const handleAddToInventory = async () => {
+        if (ingredients.length === 0) return;
+        setError("");
+        setLoading(true);
+        const inventory = ingredients.map((item) => ({ item_name: item.name, detail: item.detail }));
+        const uid = auth.currentUser?.uid;
+        try {
+            if (uid) {
+                await setDoc(doc(db, "users", uid), {
+                    inventory,
+                    inventoryUpdatedAt: new Date(),
+                }, { merge: true });
+            }
+            navigate("/dashboard");
+        } catch (err) {
+            setError("Failed to save inventory: " + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -437,6 +458,15 @@ export default function recipe_review() {
                         disabled={loading || ingredients.length === 0}
                     >
                         CREATE RECIPE
+                    </button>
+
+                    <button
+                        className="primary"
+                        style={{ background: "#006947", marginTop: "10px" }}
+                        onClick={handleAddToInventory}
+                        disabled={loading || ingredients.length === 0}
+                    >
+                        ADD TO INVENTORY
                     </button>
 
                     <button className="secondary" onClick={addIngredient}>
