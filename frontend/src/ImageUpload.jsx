@@ -70,8 +70,12 @@ export default function ImageUpload() {
       }, { merge: true })
 
       const snap = await getDocs(query(collection(db, 'users', uid, 'recipes'), orderBy('savedAt', 'desc')))
-      const saved = snap.docs.map(d => d.data()).filter(r => r.rating)
-      liked_recipes = saved.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title)
+      const saved = snap.docs.map(d => d.data())
+      const likedSet = new Map()
+      saved.forEach(r => {
+        if (r.isFavorited || r.rating >= 4) likedSet.set(r.title, r)
+      })
+      liked_recipes = [...likedSet.values()].slice(0, 3).map(r => r.title)
       disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title)
     }
 
