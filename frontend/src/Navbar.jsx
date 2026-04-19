@@ -7,7 +7,7 @@ export default function Navbar() {
 
     const navItems = [
         { label: "Review", path: "/review" },
-        { label: "Recipes", path: "/confirmation" },
+        { label: "Recipes", path: "/recipes" },
         { label: "Profile", path: "/profile" },
     ];
 
