@@ -1,26 +1,24 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import "./reciple_review.css";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
 import { collection, getDocs, query, orderBy, doc, setDoc } from "firebase/firestore";
-import { useEffect } from "react";
 import Navbar from "./Navbar";
 
 const RECIPE_URL = "http://localhost:8000/generate-recipes";
 
-export default function recipe_review() {
+export default function RecipeReview() {
+    const navigate = useNavigate();
+    const fileInputRef = useRef(null);
+
+    const [ingredients, setIngredients] = useState([]);
+    const [selectedImages, setSelectedImages] = useState([]);
 
     const removeImage = (indexToRemove) => {
         setSelectedImages((prev) =>
             prev.filter((_, index) => index !== indexToRemove)
         );
     };
-
-    const navigate = useNavigate();
-    const fileInputRef = useRef(null);
-
-    const [ingredients, setIngredients] = useState([]);
-    const [selectedImages, setSelectedImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [mode, setMode] = useState("image");
@@ -40,7 +38,7 @@ export default function recipe_review() {
 
     const addIngredient = () => {
         const newItem = {
-            // id: Date.now().toString(), // ✅ FIXED
+            id: Date.now().toString(),
             name: "New Ingredient",
             detail: "Edit me",
         };
@@ -60,7 +58,7 @@ export default function recipe_review() {
                     ? {
                         ...item,
                         name: newName,
-                        detail: `Qty: ${newQty}`, // or keep category if needed
+                        detail: `Qty: ${newQty}`,
                     }
                     : item
             )
@@ -88,8 +86,12 @@ export default function recipe_review() {
         try {
             if (uid) {
                 const userSnap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
-                const recipeHistory = userSnap.docs.map(d => d.data()).filter(r => r.rating);
-                liked_recipes = recipeHistory.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
+                const recipeHistory = userSnap.docs.map(d => d.data());
+                const likedSet = new Map();
+                recipeHistory.forEach(r => {
+                    if (r.isFavorited || r.rating >= 4) likedSet.set(r.title, r);
+                });
+                liked_recipes = [...likedSet.values()].slice(0, 3).map(r => r.title);
                 disliked_recipes = recipeHistory.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
 
                 const { getDoc } = await import("firebase/firestore");
@@ -193,7 +195,7 @@ export default function recipe_review() {
             }));
 
             setIngredients((prev) => [...prev, ...mappedIngredients]);
-            setSelectedImages([]);  // ✅ clear image
+            setSelectedImages([]);
         } catch (err) {
             setError(err.message || "Something went wrong.");
             setIngredients([]);
@@ -209,20 +211,17 @@ export default function recipe_review() {
         setError("");
         setLoading(true);
 
-        // Preview URLs
         const newPreviews = files.map((file) => ({
             file,
             url: URL.createObjectURL(file),
-            ingredients: [], // 👈 attach ingredients to this image
+            ingredients: [],
         }));
 
-        // Add to existing images
         setSelectedImages((prev) => {
             const combined = [...prev, ...newPreviews];
-            return combined.slice(0, 9); // ✅ limit to 9 images
+            return combined.slice(0, 9);
         });
 
-        // 👉 For now: only analyze the FIRST newly uploaded image
         const formData = new FormData();
         formData.append("image", files[0]);
 
@@ -246,12 +245,7 @@ export default function recipe_review() {
 
             setSelectedImages((prev) => {
                 const updated = [...prev];
-
-                // attach ingredients to the LAST added image
-                const lastIndex = updated.length - newPreviews.length;
-
-                updated[lastIndex].ingredients = mappedIngredients;
-
+                updated[updated.length - newPreviews.length].ingredients = mappedIngredients;
                 return updated;
             });
         } catch (err) {
@@ -263,7 +257,6 @@ export default function recipe_review() {
     return (
         <>
             <Navbar />
-            <div className="container"></div>
             <div className="container">
                 <header className="header">
                     <h4>
@@ -278,7 +271,6 @@ export default function recipe_review() {
 
                 <div className="content">
 
-                    {/* ✅ TOGGLE */}
                     <div style={{ marginBottom: "16px", display: "flex", gap: "10px" }}>
                         <button
                             onClick={() => {
@@ -315,7 +307,6 @@ export default function recipe_review() {
                         </button>
                     </div>
 
-                    {/* ✅ IMAGE / TEXT SECTION */}
                     <div className="imageSection">
 
                         {mode === "text" && (
@@ -356,7 +347,6 @@ export default function recipe_review() {
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Show all uploaded images */}
                                         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                                             {selectedImages.map((img, index) => (
                                                 <div
@@ -369,7 +359,6 @@ export default function recipe_review() {
                                                         style={{ width: "120px", borderRadius: "8px" }}
                                                     />
 
-                                                    {/* ❌ Delete button */}
                                                     <button
                                                         onClick={() => removeImage(index)}
                                                         style={{
@@ -394,7 +383,6 @@ export default function recipe_review() {
                                             ))}
                                         </div>
 
-                                        {/* ✅ NEW BUTTON (this is what you wanted) */}
                                         <button
                                             disabled={maxReached}
                                             onClick={handleUploadClick}
@@ -425,7 +413,6 @@ export default function recipe_review() {
                         )}
                     </div>
 
-                    {/* ✅ PANEL */}
                     <div className="panel">
                         <div className="panelHeader">
                             <h3>INGREDIENTS</h3>
@@ -464,6 +451,28 @@ export default function recipe_review() {
                             CREATE RECIPE
                         </button>
 
+                        <button className="secondary" onClick={addIngredient}>
+                            ADD MISSING ITEM
+                        </button>
+
+                        <button
+                            className="secondary"
+                            onClick={handleUpdateInventory}
+                            disabled={loading || ingredients.length === 0}
+                        >
+                            {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
+                        </button>
+
+                    </div>
+
+                        <button
+                            className="primary"
+                            onClick={handleConfirm}
+                            disabled={loading || ingredients.length === 0}
+                        >
+                            CREATE RECIPE
+                        </button>
+
                         <button
                             className="primary"
                             style={{ background: "#006947", marginTop: "10px" }}
@@ -484,8 +493,6 @@ export default function recipe_review() {
                         >
                             {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
                         </button>
-
-                    </div>
 
                 <footer className="footer">
                     <p>

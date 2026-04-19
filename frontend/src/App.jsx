@@ -5,12 +5,7 @@ import ProfileSetup from './ProfileSetup'
 import RecipeReview from './RecipeReview'
 import Confirmation from './Confirmation'
 import ImageUpload from './ImageUpload'
-import Dashboard from './Dashboard'
-import IngredientInput from './IngredientInput'
-import Inventory from './Inventory'
 import RecipeCollection from './RecipeCollection'
-import Inventory from './Inventory'
-import Dashboard from './Dashboard'
 
 function App() {
   return (

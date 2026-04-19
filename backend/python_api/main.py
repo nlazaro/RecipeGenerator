@@ -2,6 +2,7 @@ import base64
 import json
 import os
 
+import google.generativeai as genai
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -19,7 +20,12 @@ UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
 if not UNSPLASH_ACCESS_KEY:
     raise RuntimeError("UNSPLASH_ACCESS_KEY is not set.")
 
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise RuntimeError("GOOGLE_API_KEY is not set.")
+
 client = Groq(api_key=GROQ_API_KEY)
+genai.configure(api_key=GOOGLE_API_KEY)
 
 app = FastAPI()
 
@@ -80,6 +86,12 @@ class InventoryItem(BaseModel):
     category: str = ""
     count: int = 1
     detail: str = ""
+
+
+class ChatRequest(BaseModel):
+    message: str
+    health_profile: str
+    current_inventory: list[str]
 
 
 class RecipeRequest(BaseModel):
@@ -219,3 +231,29 @@ async def analyze_text(payload: TextRequest):
         raise HTTPException(status_code=500, detail="Model response missing 'inventory' key.")
 
     return result
+
+
+@app.post("/api/chat")
+async def chat(body: ChatRequest):
+    system_instructions = f"""
+You are an expert clinical dietician and medical dietary assistant.
+
+USER HEALTH PROFILE: {body.health_profile}
+USER FRIDGE INVENTORY: {body.current_inventory}
+
+CRITICAL RULES:
+1. STRICT MEDICAL COMPLIANCE: Base all your health warnings and nutritional advice strictly on official FDA food-drug interaction guides and condition-specific clinical nutrition guidelines (e.g., AHA, ADA).
+2. Never suggest a recipe or food that conflicts with the user's medical profile or medications.
+3. Answer their question based ONLY on the food they actually have in their inventory.
+4. If there is a risk of a food-drug interaction, you must refuse the recipe and explain the medical reasoning clearly.
+"""
+    try:
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=system_instructions,
+        )
+        response = model.generate_content(body.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
+
+    return {"response": response.text}

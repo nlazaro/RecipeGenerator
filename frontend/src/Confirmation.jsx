@@ -152,9 +152,13 @@ export default function Confirmation() {
         try {
             if (uid) {
                 const snap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
-                const savedR = snap.docs.map(d => d.data()).filter(r => r.rating);
-                liked_recipes = savedR.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
-                disliked_recipes = savedR.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
+                const saved = snap.docs.map(d => d.data());
+                const likedSet = new Map();
+                saved.forEach(r => {
+                    if (r.isFavorited || r.rating >= 4) likedSet.set(r.title, r);
+                });
+                liked_recipes = [...likedSet.values()].slice(0, 3).map(r => r.title);
+                disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
             }
             const response = await fetch(RECIPE_URL, {
                 method: "POST",
@@ -169,6 +173,33 @@ export default function Confirmation() {
         } finally {
             setRegenerating(false);
         }
+    }
+
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [feedback, setFeedback] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [recipeImage, setRecipeImage] = useState(null);
+
+    useEffect(() => {
+        if (selected === null) { setRecipeImage(null); return; }
+        const title = recipeList[selected]?.title;
+        if (!title) return;
+        fetch(`http://localhost:8000/recipe-image?title=${encodeURIComponent(title)}`)
+            .then(r => r.json())
+            .then(d => setRecipeImage(d.image_url || null))
+            .catch(() => setRecipeImage(null));
+    }, [selected]);
+
+    function handleSelectRecipe(i) {
+        setSelected(i);
+        setIsFavorited(false);
+        setRating(0);
+        setHoverRating(0);
+        setFeedback("");
+        setSaved(false);
     }
 
     async function handleSave() {
@@ -199,15 +230,17 @@ export default function Confirmation() {
     /* ── EMPTY STATE ── */
     if (!recipeList.length) {
         return (
-            <div className="cf-page">
-                <AppNav displayName={displayName} />
-                <div className="cf-empty">
-                    <span className="cf-empty-icon">🍽️</span>
-                    <p className="cf-empty-title">No recipes found</p>
-                    <p className="cf-empty-sub">Something went wrong generating your recipes.</p>
-                    <button className="cf-cta-btn" onClick={() => navigate("/review")}>← Back to Recipe Input</button>
+            <>
+                <Navbar />
+                <div className="recipe-page">
+                    <div style={{ padding: "48px", textAlign: "center" }}>
+                        <p style={{ color: "#888", marginBottom: "24px" }}>No recipes found.</p>
+                        <button className="btn btn-dark" style={{ width: "auto", padding: "16px 32px" }} onClick={() => navigate("/review")}>
+                            ← GO BACK
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
@@ -473,6 +506,8 @@ export default function Confirmation() {
                                     rows={3}
                                 />
                             </div>
+                        </aside>
+                    </main>
 
                             <div className="cf-sidebar-divider" />
 
@@ -549,10 +584,11 @@ export default function Confirmation() {
                                     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                                 </svg>
                             </div>
+                            <div className="card-arrow">→</div>
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </>
     );
 }
