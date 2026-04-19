@@ -25,8 +25,12 @@ export default function Confirmation() {
         try {
             if (uid) {
                 const snap = await getDocs(query(collection(db, "users", uid, "recipes"), orderBy("savedAt", "desc")));
-                const saved = snap.docs.map(d => d.data()).filter(r => r.rating);
-                liked_recipes = saved.filter(r => r.rating >= 4).slice(0, 3).map(r => r.title);
+                const saved = snap.docs.map(d => d.data());
+                const likedSet = new Map();
+                saved.forEach(r => {
+                    if (r.isFavorited || r.rating >= 4) likedSet.set(r.title, r);
+                });
+                liked_recipes = [...likedSet.values()].slice(0, 3).map(r => r.title);
                 disliked_recipes = saved.filter(r => r.rating <= 2).slice(0, 3).map(r => r.title);
             }
             const response = await fetch(RECIPE_URL, {
@@ -101,9 +105,6 @@ export default function Confirmation() {
             <>
                 <Navbar />
                 <div className="recipe-page">
-                    <nav className="topbar">
-                        <div className="brand">RECIPEGEN</div>
-                    </nav>
                     <div style={{ padding: "48px", textAlign: "center" }}>
                         <p style={{ color: "#888", marginBottom: "24px" }}>No recipes found.</p>
                         <button className="btn btn-dark" style={{ width: "auto", padding: "16px 32px" }} onClick={() => navigate("/review")}>
@@ -125,13 +126,9 @@ export default function Confirmation() {
             <>
                 <Navbar />
                 <div className="recipe-page">
-                    <nav className="topbar">
-                        <div className="brand">RECIPEGEN</div>
-                        <div className="nav-right">
-                            <button className="back-btn" onClick={() => setSelected(null)}>← ALL RECIPES</button>
-                        </div>
-                    </nav>
-
+                    <div style={{ padding: "12px 0 0" }}>
+                        <button className="back-btn" onClick={() => setSelected(null)}>← ALL RECIPES</button>
+                    </div>
                 <main className="hero-grid">
                     <section className="hero-left">
                         <div className="label">AI GENERATED RECIPE</div>
@@ -258,13 +255,6 @@ export default function Confirmation() {
         <>
             <Navbar />
             <div className="recipe-page">
-                <nav className="topbar">
-                    <div className="brand">RECIPEGEN</div>
-                    <div className="nav-right">
-                        <button className="back-btn" onClick={() => navigate("/review")}>← BACK</button>
-                    </div>
-                </nav>
-
                 <header className="selection-header">
                     <div className="label">AI GENERATED</div>
                     <h1 className="recipe-title">YOUR RECIPES</h1>
