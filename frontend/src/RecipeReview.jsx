@@ -447,17 +447,13 @@ export default function recipe_review() {
                             ADD MISSING ITEM
                         </button>
 
-                        <button className="secondary">
-                            UPDATE INVENTORY
+                        <button
+                            className="secondary"
+                            onClick={handleUpdateInventory}
+                            disabled={loading || ingredients.length === 0}
+                        >
+                            {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
                         </button>
-
-                    <button
-                        className="secondary"
-                        onClick={handleUpdateInventory}
-                        disabled={loading || ingredients.length === 0}
-                    >
-                        {inventorySaved ? "✓ SAVED" : "UPDATE INVENTORY"}
-                    </button>
 
                     </div>
 
