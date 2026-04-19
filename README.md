@@ -6,8 +6,8 @@ A web app that scans your fridge/food inventory using AI and generates recipes b
 
 - **Frontend:** React + Vite
 - **Auth & Database:** Firebase (Authentication, Firestore)
-- **Image Analysis API:** FastAPI + Groq (Llama 4)
-- **Recipe Generator API:** Gemini
+- **Python API:** FastAPI + Groq (Llama 4 Scout for vision/text, Llama 3.3 70B for recipes)
+- **Food Photos:** Unsplash API (on-demand per recipe)
 - **Backend Functions:** Firebase Cloud Functions (Node.js)
 
 ## Project Structure
@@ -67,11 +67,13 @@ firebase emulators:start
 
 ## API
 
+All endpoints served at `http://localhost:8000`.
+
 ### `POST /analyze-image`
 
-Upload a food image and get back a detected inventory.
+Upload a food image; returns AI-detected inventory. Non-food items are silently ignored.
 
-**Request:** multipart form data with field `image`
+**Request:** `multipart/form-data` with field `image` (JPEG/PNG)
 
 **Response:**
 ```json
@@ -82,27 +84,88 @@ Upload a food image and get back a detected inventory.
 }
 ```
 
+---
+
+### `POST /analyze-text`
+
+Parse a free-text ingredient list into structured inventory. Non-food items are silently ignored.
+
+**Request:**
+```json
+{ "text": "2 chicken breasts, a dozen eggs, some olive oil" }
+```
+
+**Response:**
+```json
+{
+  "inventory": [
+    { "item_name": "Chicken Breast", "category": "Protein", "count": 2 },
+    { "item_name": "Eggs", "category": "Protein", "count": 12 },
+    { "item_name": "Olive Oil", "category": "Pantry", "count": 1 }
+  ]
+}
+```
+
+---
+
 ### `POST /generate-recipes`
 
-Takes a confirmed inventory and returns recipe suggestions.
+Takes a confirmed inventory and optional personalisation context; returns 3 recipe suggestions.
 
 **Request:**
 ```json
 {
   "inventory": [
-    { "item_name": "Banana", "category": "Produce", "count": 3 }
+    { "item_name": "Chicken Breast", "category": "Protein", "count": 2 }
+  ],
+  "liked_recipes": ["Garlic Chicken Stir-fry"],
+  "disliked_recipes": ["Spicy Tofu Bowl"]
+}
+```
+`liked_recipes` and `disliked_recipes` are optional arrays of recipe title strings pulled from the user's saved ratings (≥4 stars / ≤2 stars). The model uses them to personalise suggestions.
+
+**Response:**
+```json
+{
+  "recipes": [
+    {
+      "title": "Garlic Chicken Stir-fry",
+      "description": "A quick and flavourful weeknight chicken dish.",
+      "ingredients": ["Chicken Breast", "Garlic", "Soy Sauce"],
+      "steps": ["Slice chicken into strips.", "Heat oil in pan.", "Stir-fry 8 minutes."],
+      "prep_time": "10 minutes",
+      "cook_time": "15 minutes",
+      "servings": 2
+    }
   ]
 }
 ```
 
-## Firestore Collections
+---
 
-| Collection | Description |
-|---|---|
-| `inventories` | Confirmed ingredient lists per user |
-| `recipes` | Generated recipes linked to the inventory used |
+### `GET /recipe-image?title=<recipe title>`
 
-## Pending Integrations
+Fetches a landscape food photo from Unsplash for a given recipe title. Called on demand when a user opens a recipe detail view.
 
-- `/generate-recipes` endpoint
-- User dashboard / recipe display page
+**Query param:** `title` — the recipe title string (URL-encoded)
+
+**Response:**
+```json
+{ "image_url": "https://images.unsplash.com/..." }
+```
+Returns `{ "image_url": null }` if no matching photo is found.
+
+---
+
+## Firestore Structure
+
+```
+users/{uid}
+  ├── inventory: [...] (array field — full ingredient stock)
+  └── recipes/{recipeId}
+        title, description, ingredients, steps,
+        prep_time, cook_time, servings,
+        isFavorited, rating, feedback, savedAt
+```
+
+Security rules ensure each user can only read/write their own documents.
