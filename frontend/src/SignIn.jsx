@@ -32,7 +32,7 @@ function SignIn() {
       } else {
         const result = await signInWithEmailAndPassword(auth, email, password)
         await createUserDoc(result.user)
-        navigate('/dashboard')
+        navigate('/')
       }
     } catch (err) {
       setError(err.message)
@@ -45,7 +45,7 @@ function SignIn() {
       const result = await signInWithPopup(auth, googleProvider)
       await createUserDoc(result.user)
       const { isNewUser } = getAdditionalUserInfo(result)
-      navigate(isNewUser ? '/profile' : '/dashboard')
+      navigate(isNewUser ? '/profile' : '/')
     } catch (err) {
       setError(err.message)
     }
